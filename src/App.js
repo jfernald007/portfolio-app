@@ -8,7 +8,7 @@ function Home() {
         <Box p={20} align="flex-start">
             <Stack p={10} w={300} gap={5}>
                 <Title order={1}>Home Page</Title>
-                <Text>Welcome to the portfolio app!</Text>
+                <Text>Welcome to the collection app!</Text>
                 {/* Add a Button that links to the Dashboard */}
                 <Button
                     component={Link}

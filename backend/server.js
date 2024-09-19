@@ -26,38 +26,44 @@ mongoose
         console.error('Error connecting to MongoDB:', err);
     });
 
-// Define a simple Portfolio schema and model
-const portfolioSchema = new mongoose.Schema({
+// Define a simple collection schema and model
+const slideSchema = new mongoose.Schema({
     title: String,
-    description: String,
+    content: String, // This will hold the rich text HTML content
 });
 
-const Portfolio = mongoose.model('Portfolio', portfolioSchema);
+const collectionSchema = new mongoose.Schema({
+    title: String,
+    description: String,
+    slides: [slideSchema], // Array of slides
+});
+
+const Collection = mongoose.model('Collection', collectionSchema);
 
 // Routes
 app.get('/', (req, res) => {
     res.send('API is running...');
 });
 
-// POST route to create a portfolio
-app.post('/portfolios', async (req, res) => {
-    const { title, description } = req.body;
+// POST route to create a collection
+app.post('/collections', async (req, res) => {
+    const { title, description, slides } = req.body; // Include slides in the request
     try {
-        const newPortfolio = new Portfolio({ title, description });
-        await newPortfolio.save();
-        res.status(201).json(newPortfolio);
+        const newCollection = new Collection({ title, description, slides });
+        await newCollection.save();
+        res.status(201).json(newCollection);
     } catch (error) {
-        res.status(500).json({ error: 'Error creating portfolio' });
+        res.status(500).json({ error: 'Error creating collection' });
     }
 });
 
-// GET route to fetch portfolios
-app.get('/portfolios', async (req, res) => {
+// GET route to fetch collections
+app.get('/collections', async (req, res) => {
     try {
-        const portfolios = await Portfolio.find();
-        res.status(200).json(portfolios);
+        const collections = await Collection.find(); // Assuming 'Collection' is your MongoDB model
+        res.status(200).json(collections);
     } catch (error) {
-        res.status(500).json({ error: 'Error fetching portfolios' });
+        res.status(500).json({ error: 'Error fetching collections' });
     }
 });
 

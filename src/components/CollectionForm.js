@@ -1,15 +1,22 @@
 import React, { useState } from 'react';
-import { Stack, TextInput, Textarea, Button, Group, Box } from '@mantine/core';
+import { Stack, TextInput, Textarea, Button, Box } from '@mantine/core';
+import Slide from './Slide';
 
 const PortfolioForm = ({ onSubmit }) => {
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
+    const [slides, setSlides] = useState([]);
+
+    const addSlide = (newSlide) => {
+        setSlides([...slides, newSlide]);
+    };
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        onSubmit({ title, description });
+        onSubmit({ title, description, slides });
         setTitle('');
         setDescription('');
+        setSlides([]); // Reset slides after submission
     };
 
     return (
@@ -33,9 +40,21 @@ const PortfolioForm = ({ onSubmit }) => {
                         required
                     />
 
-                    <Group position="right" mt="md">
-                        <Button type="submit">Create Portfolio</Button>
-                    </Group>
+                    {/* Slide creation */}
+                    <h3>Add Slides</h3>
+                    {slides.map((slide, index) => (
+                        <div key={index}>
+                            <h4>{slide.title}</h4>
+                            <div
+                                dangerouslySetInnerHTML={{
+                                    __html: slide.content,
+                                }}
+                            />
+                        </div>
+                    ))}
+                    <Slide onSave={addSlide} />
+
+                    <Button type="submit">Create Portfolio</Button>
                 </form>
             </Stack>
         </Box>
