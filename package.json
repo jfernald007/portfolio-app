@@ -17,8 +17,10 @@
         "web-vitals": "^2.1.4"
     },
     "scripts": {
-        "format": "prettier --write \"src/**/*.{js,jsx}\"",
-        "start": "react-scripts start",
+        "format": "prettier --write \"src/**/*.{js,jsx,json}\"",
+        "start": "concurrently \"npm run start-frontend\" \"npm run start-backend\"",
+        "start-frontend": "react-scripts start",
+        "start-backend": "cd backend && node server.js",
         "build": "react-scripts build",
         "test": "react-scripts test",
         "eject": "react-scripts eject"
@@ -42,6 +44,7 @@
         ]
     },
     "devDependencies": {
+        "concurrently": "^9.0.1",
         "postcss": "^8.4.47",
         "postcss-preset-mantine": "^1.17.0",
         "postcss-simple-vars": "^7.0.1",
