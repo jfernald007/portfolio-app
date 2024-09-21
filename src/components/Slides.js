@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Stack, Text, Button, Group } from '@mantine/core';
+import { Stack, Text, Button, Group, ActionIcon } from '@mantine/core';
+import { IconPlus, IconEdit, IconX } from '@tabler/icons-react';
 import SlideForm from './SlideForm';
 import CustomDialog from './CustomDialog';
 
@@ -81,13 +82,28 @@ const Slides = ({ activeCollection, updateCollection }) => {
         <Stack>
             {activeCollection ? (
                 <>
-                    <Group position="apart">
-                        <Text weight={600} size="lg">
+                    <Group w={300} gap={7} preventGrowOverflow>
+                        <Text
+                            truncate
+                            weight={600}
+                            size="lg"
+                            w={'calc(100% - 35px)'}
+                        >
                             Slides for {activeCollection.title}
                         </Text>
-                        <Button onClick={() => openSlideDialog()}>
-                            Create Slide
-                        </Button>
+                        <ActionIcon
+                            variant="transparent"
+                            aria-label="Settings"
+                            onClick={() => openSlideDialog()}
+                        >
+                            <IconPlus
+                                style={{
+                                    width: '90%',
+                                    height: '90%',
+                                }}
+                                stroke={1}
+                            />
+                        </ActionIcon>
                     </Group>
 
                     {/* List of slides */}
@@ -95,28 +111,47 @@ const Slides = ({ activeCollection, updateCollection }) => {
                         activeCollection.slides.map((slide) => {
                             console.log('Rendering slide with ID:', slide._id); // Log the _id to debug
                             return (
-                                <Group key={slide._id} position="apart">
-                                    <Text>{slide.title}</Text>
-                                    <Group>
-                                        <Button
-                                            variant="outline"
-                                            size="xs"
+                                <Group
+                                    w={300}
+                                    gap={9}
+                                    preventGrowOverflow
+                                    key={slide._id}
+                                >
+                                    <Text truncate w={'calc(100% - 70px)'}>
+                                        {slide.title}
+                                    </Text>
+                                    <Group gap={5}>
+                                        <ActionIcon
+                                            variant="transparent"
+                                            aria-label="Settings"
                                             onClick={() =>
                                                 openSlideDialog(slide)
                                             }
                                         >
-                                            Edit
-                                        </Button>
-                                        <Button
-                                            variant="outline"
-                                            size="xs"
+                                            <IconEdit
+                                                style={{
+                                                    width: '90%',
+                                                    height: '90%',
+                                                }}
+                                                stroke={1}
+                                            />
+                                        </ActionIcon>
+                                        <ActionIcon
+                                            variant="transparent"
                                             color="red"
+                                            aria-label="Settings"
                                             onClick={() =>
                                                 openDeleteDialog(slide)
                                             }
                                         >
-                                            Delete
-                                        </Button>
+                                            <IconX
+                                                style={{
+                                                    width: '90%',
+                                                    height: '90%',
+                                                }}
+                                                stroke={1}
+                                            />
+                                        </ActionIcon>
                                     </Group>
                                 </Group>
                             );
@@ -160,7 +195,16 @@ const Slides = ({ activeCollection, updateCollection }) => {
                     )}
                 </>
             ) : (
-                <Text>Select a collection to view and add slides</Text>
+                <Group w={300} gap={7} preventGrowOverflow>
+                    <Text
+                        truncate
+                        weight={600}
+                        size="lg"
+                        w={'calc(100% - 35px)'}
+                    >
+                        Select a collection to view and add slides
+                    </Text>
+                </Group>
             )}
         </Stack>
     );

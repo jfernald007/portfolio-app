@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Stack, Text, Button, Group } from '@mantine/core';
+import { Stack, Text, Button, Group, ActionIcon } from '@mantine/core';
+import { IconPlus, IconEdit, IconX } from '@tabler/icons-react';
 import CollectionForm from './CollectionForm';
 import CustomDialog from './CustomDialog'; // Import the reusable dialog
 import axios from 'axios';
@@ -136,19 +137,36 @@ const Collections = ({ onSelectCollection, activeCollection }) => {
     return (
         <Stack>
             {/* Title and Create Button aligned */}
-            <Group position="apart">
-                <Text weight={600} size="lg">
+            <Group w={300} gap={7} preventGrowOverflow>
+                <Text truncate weight={600} size="lg" w={'calc(100% - 35px)'}>
                     Collections
                 </Text>
-                <Button onClick={() => openCreateEditDialog()}>
-                    Create Collection
-                </Button>
+                <ActionIcon
+                    variant="transparent"
+                    aria-label="Settings"
+                    onClick={() => openCreateEditDialog()}
+                >
+                    <IconPlus
+                        style={{
+                            width: '90%',
+                            height: '90%',
+                        }}
+                        stroke={1}
+                    />
+                </ActionIcon>
             </Group>
 
             {collections.length > 0 ? (
                 collections.map((collection) => (
-                    <Group key={collection._id} position="apart">
+                    <Group
+                        w={300}
+                        gap={9}
+                        preventGrowOverflow
+                        key={collection._id}
+                    >
                         <Text
+                            truncate
+                            w={'calc(100% - 70px)'}
                             onClick={() => onSelectCollection(collection)} // Set active collection
                             style={{
                                 cursor: 'pointer',
@@ -160,22 +178,34 @@ const Collections = ({ onSelectCollection, activeCollection }) => {
                         >
                             {collection.title}
                         </Text>
-                        <Group>
-                            <Button
-                                variant="outline"
-                                size="xs"
-                                onClick={() => openCreateEditDialog(collection)} // Open the create/edit dialog
+                        <Group gap={5}>
+                            <ActionIcon
+                                variant="transparent"
+                                aria-label="Settings"
+                                onClick={() => openCreateEditDialog(collection)}
                             >
-                                Edit
-                            </Button>
-                            <Button
-                                variant="outline"
-                                size="xs"
+                                <IconEdit
+                                    style={{
+                                        width: '90%',
+                                        height: '90%',
+                                    }}
+                                    stroke={1}
+                                />
+                            </ActionIcon>
+                            <ActionIcon
+                                variant="transparent"
                                 color="red"
-                                onClick={() => openDeleteDialog(collection)} // Open the delete dialog
+                                aria-label="Settings"
+                                onClick={() => openDeleteDialog(collection)}
                             >
-                                Delete
-                            </Button>
+                                <IconX
+                                    style={{
+                                        width: '90%',
+                                        height: '90%',
+                                    }}
+                                    stroke={1}
+                                />
+                            </ActionIcon>
                         </Group>
                     </Group>
                 ))
