@@ -1,64 +1,72 @@
-import React, { useState } from 'react';
-import { Stack, TextInput, Textarea, Button, Box } from '@mantine/core';
-import Slide from './Slide';
+import React, { useState, useEffect } from 'react';
+import { TextInput, Textarea, Button, Stack, Group } from '@mantine/core';
 
-const PortfolioForm = ({ onSubmit }) => {
-    const [title, setTitle] = useState('');
-    const [description, setDescription] = useState('');
-    const [slides, setSlides] = useState([]);
+const CollectionForm = ({ initialValues = {}, onSubmit, onCancel }) => {
+    const [title, setTitle] = useState(initialValues.title || '');
+    const [description, setDescription] = useState(
+        initialValues.description || ''
+    );
+    const [isChanged, setIsChanged] = useState(false); // Track if any changes have been made
 
-    const addSlide = (newSlide) => {
-        setSlides([...slides, newSlide]);
-    };
+    // Check if the form fields are different from the initial values (for editing)
+    useEffect(() => {
+        if (initialValues.title || initialValues.description) {
+            const isFormChanged =
+                title !== initialValues.title ||
+                description !== initialValues.description;
+            setIsChanged(isFormChanged);
+        }
+    }, [title, description, initialValues]);
+
+    // Disable the save button if required fields are not filled
+    const isSaveDisabled =
+        title.trim() === '' ||
+        description.trim() === '' ||
+        (!isChanged && initialValues.title);
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        onSubmit({ title, description, slides });
-        setTitle('');
-        setDescription('');
-        setSlides([]); // Reset slides after submission
+        if (!isSaveDisabled) {
+            // Pass the _id when editing a collection
+            onSubmit({ _id: initialValues._id, title, description });
+        }
+    };
+
+    const handleCancel = () => {
+        setTitle(initialValues.title || ''); // Reset the title field
+        setDescription(initialValues.description || ''); // Reset the description field
+        onCancel(); // Trigger the cancel action to close the form
     };
 
     return (
-        <Box p={0} align="flex-start">
-            <Stack px={0} py={10} w={300} gap={5}>
-                <form onSubmit={handleSubmit}>
-                    <TextInput
-                        label="Portfolio Title"
-                        placeholder="Enter portfolio title"
-                        value={title}
-                        onChange={(e) => setTitle(e.target.value)}
-                        required
-                    />
+        <form onSubmit={handleSubmit}>
+            <Stack spacing="md">
+                <TextInput
+                    label="Collection Title"
+                    placeholder="Enter collection title"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    required
+                />
+                <Textarea
+                    label="Collection Description"
+                    placeholder="Enter a brief description"
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    required
+                />
 
-                    <Textarea
-                        label="Portfolio Description"
-                        placeholder="Enter a brief description"
-                        value={description}
-                        onChange={(e) => setDescription(e.target.value)}
-                        mt="md"
-                        required
-                    />
-
-                    {/* Slide creation */}
-                    <h3>Add Slides</h3>
-                    {slides.map((slide, index) => (
-                        <div key={index}>
-                            <h4>{slide.title}</h4>
-                            <div
-                                dangerouslySetInnerHTML={{
-                                    __html: slide.content,
-                                }}
-                            />
-                        </div>
-                    ))}
-                    <Slide onSave={addSlide} />
-
-                    <Button type="submit">Create Portfolio</Button>
-                </form>
+                <Group position="right" mt="md">
+                    <Button variant="outline" onClick={handleCancel}>
+                        Cancel
+                    </Button>
+                    <Button type="submit" disabled={isSaveDisabled}>
+                        Save
+                    </Button>
+                </Group>
             </Stack>
-        </Box>
+        </form>
     );
 };
 
-export default PortfolioForm;
+export default CollectionForm;

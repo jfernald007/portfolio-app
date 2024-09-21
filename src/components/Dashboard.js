@@ -1,73 +1,49 @@
-import React, { useState, useEffect } from 'react';
-import { Stack, Title, Text, Button, Box } from '@mantine/core';
-import { Link } from 'react-router-dom'; // Import Link from React Router
+import React, { useState } from 'react';
+import { Group, Box } from '@mantine/core';
+import Collections from './Collections';
+import Slides from './Slides';
 import axios from 'axios';
-import CollectionForm from './CollectionForm';
 
 const Dashboard = () => {
-    const [collections, setCollections] = useState([]);
+    const [activeCollection, setActiveCollection] = useState(null);
 
-    // Fetch collections from the backend
-    useEffect(() => {
-        const fetchCollections = async () => {
-            try {
-                const response = await axios.get(
-                    'http://localhost:5001/collections'
-                );
-                setCollections(response.data);
-            } catch (error) {
-                console.error('Error fetching collections:', error);
-            }
-        };
+    // Update active collection after selection
+    const handleSelectCollection = (collection) => {
+        setActiveCollection(collection);
+    };
 
-        fetchCollections();
-    }, []);
-
-    // Handle collection submission
-    const handleCollectionSubmit = async (newCollection) => {
+    // Update collection after adding/editing slides and persist changes
+    const updateActiveCollection = async (updatedCollection) => {
         try {
-            const response = await axios.post(
-                'http://localhost:5001/collections',
-                newCollection
+            const response = await axios.put(
+                `http://localhost:5001/collections/${updatedCollection._id}`,
+                updatedCollection
             );
-            console.log('Response from API:', response.data); // Add this line
-            setCollections((prevCollections) => [
-                ...prevCollections,
-                response.data,
-            ]);
+            setActiveCollection(response.data); // Set the updated collection as active
         } catch (error) {
-            console.error('Error creating collection:', error);
+            console.error('Error updating collection:', error);
         }
     };
 
     return (
         <Box p={20} align="flex-start">
-            <Stack p={10} w={300} gap={5}>
-                <Title order={1}>Dashboard</Title>
-                <Text>
-                    Welcome to your collection dashboard! Here you can create,
-                    edit, and manage your collections.
-                </Text>
+            <Group spacing="lg" align="flex-start" gap={30}>
+                {/* Column 1: Collections */}
+                <Box>
+                    <Collections
+                        onSelectCollection={handleSelectCollection}
+                        activeCollection={activeCollection}
+                    />
+                </Box>
 
-                <CollectionForm onSubmit={handleCollectionSubmit} />
-
-                <Title order={2} mt="xl">
-                    Your Collections
-                </Title>
-                {collections.length > 0 ? (
-                    collections.map((collection, index) => (
-                        <div key={index}>
-                            <Title order={3}>{collection.title}</Title>
-                            <Text>{collection.description}</Text>
-                        </div>
-                    ))
-                ) : (
-                    <Text>No collections yet. Start by creating one!</Text>
-                )}
-                <Button component={Link} to="/" mt="md" variant="outline">
-                    Back to Home
-                </Button>
-            </Stack>
+                {/* Column 2: Slides */}
+                <Box>
+                    <Slides
+                        activeCollection={activeCollection}
+                        updateCollection={updateActiveCollection}
+                    />
+                </Box>
+            </Group>
         </Box>
     );
 };
