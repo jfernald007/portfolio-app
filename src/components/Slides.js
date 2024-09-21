@@ -3,14 +3,17 @@ import { Stack, Text, Button, Group } from '@mantine/core';
 import SlideForm from './SlideForm';
 import CustomDialog from './CustomDialog';
 
-// Function to generate a unique ID based on the collection's ID
 const generateSlideId = (collectionId) => {
-    return `${collectionId}_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+    return `${collectionId}_${Date.now()}_${Math.random()
+        .toString(36)
+        .substring(2, 9)}`;
 };
 
 const Slides = ({ activeCollection, updateCollection }) => {
     const [editingSlide, setEditingSlide] = useState(null); // Track the slide being edited
     const [showDialog, setShowDialog] = useState(false); // Control for showing the form dialog
+    const [showDeleteDialog, setShowDeleteDialog] = useState(false); // Control for delete confirmation dialog
+    const [slideToDelete, setSlideToDelete] = useState(null); // Track the slide to delete
     const [dialogTitle, setDialogTitle] = useState(''); // Title for the dialog
 
     // Function to handle slide creation or update
@@ -34,7 +37,6 @@ const Slides = ({ activeCollection, updateCollection }) => {
         };
 
         console.log('Updated collection with slides:', updatedCollection);
-        updatedSlides.forEach((slide) => console.log('Slide ID:', slide._id)); // Log each slide's ID
         updateCollection(updatedCollection).then(() => {
             setShowDialog(false); // Close the dialog after save
             setEditingSlide(null); // Reset editing state
@@ -48,10 +50,16 @@ const Slides = ({ activeCollection, updateCollection }) => {
         setShowDialog(true);
     };
 
-    // Function to delete a slide
-    const handleDeleteSlide = (slideId) => {
+    // Function to open the delete confirmation dialog
+    const openDeleteDialog = (slide) => {
+        setSlideToDelete(slide); // Set the slide to be deleted
+        setShowDeleteDialog(true); // Open the confirmation dialog
+    };
+
+    // Function to handle slide deletion
+    const handleDeleteSlide = () => {
         const updatedSlides = activeCollection.slides.filter(
-            (slide) => slide._id !== slideId // Only keep slides that don't match the slideId
+            (slide) => slide._id !== slideToDelete._id // Only keep slides that don't match the slideId
         );
 
         const updatedCollection = {
@@ -63,7 +71,10 @@ const Slides = ({ activeCollection, updateCollection }) => {
             'Updated collection after deleting slide:',
             updatedCollection
         );
-        updateCollection(updatedCollection); // Persist the changes to the collection
+        updateCollection(updatedCollection).then(() => {
+            setShowDeleteDialog(false); // Close the confirmation dialog
+            setSlideToDelete(null); // Reset slideToDelete
+        });
     };
 
     return (
@@ -85,8 +96,6 @@ const Slides = ({ activeCollection, updateCollection }) => {
                             console.log('Rendering slide with ID:', slide._id); // Log the _id to debug
                             return (
                                 <Group key={slide._id} position="apart">
-                                    {' '}
-                                    {/* Ensure slide._id is unique */}
                                     <Text>{slide.title}</Text>
                                     <Group>
                                         <Button
@@ -103,7 +112,7 @@ const Slides = ({ activeCollection, updateCollection }) => {
                                             size="xs"
                                             color="red"
                                             onClick={() =>
-                                                handleDeleteSlide(slide._id)
+                                                openDeleteDialog(slide)
                                             }
                                         >
                                             Delete
@@ -128,7 +137,27 @@ const Slides = ({ activeCollection, updateCollection }) => {
                             />
                         }
                         onCancel={() => setShowDialog(false)}
+                        showButtons={false} // No extra buttons, since the form has its own buttons
                     />
+
+                    {/* Reusable Confirmation Dialog for Deleting Slides */}
+                    {slideToDelete && (
+                        <CustomDialog
+                            opened={showDeleteDialog}
+                            title="Delete Slide"
+                            content={
+                                <Text>
+                                    Are you sure you want to delete the slide "
+                                    {slideToDelete.title}"?
+                                </Text>
+                            }
+                            onConfirm={handleDeleteSlide}
+                            onCancel={() => setShowDeleteDialog(false)}
+                            confirmLabel="Delete"
+                            cancelLabel="Cancel"
+                            showButtons={true} // Show confirm/cancel buttons
+                        />
+                    )}
                 </>
             ) : (
                 <Text>Select a collection to view and add slides</Text>
