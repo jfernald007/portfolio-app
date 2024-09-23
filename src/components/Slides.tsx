@@ -1,6 +1,11 @@
 import React, { useState } from 'react';
-import { Stack, Text, Group, ActionIcon } from '@mantine/core';
-import { IconPlus, IconEdit, IconX } from '@tabler/icons-react';
+import { Stack, Text, Group, ActionIcon, Menu } from '@mantine/core';
+import {
+    IconPlus,
+    IconEdit,
+    IconX,
+    IconDotsVertical,
+} from '@tabler/icons-react';
 import SlideForm from './SlideForm';
 import CustomDialog from './CustomDialog';
 
@@ -49,7 +54,6 @@ const Slides: React.FC<SlidesProps> = ({
         if (!activeCollection) return;
 
         if (!slideData.title || !slideData.content) {
-            // Ensure title and content are provided
             console.error('Title and content are required');
             return;
         }
@@ -64,8 +68,8 @@ const Slides: React.FC<SlidesProps> = ({
                   ...activeCollection.slides,
                   {
                       _id: generateSlideId(activeCollection._id), // Only add `_id` for new slides
-                      title: slideData.title, // Title is now required
-                      content: slideData.content, // Content is now required
+                      title: slideData.title,
+                      content: slideData.content,
                   },
               ];
 
@@ -79,7 +83,31 @@ const Slides: React.FC<SlidesProps> = ({
             setShowDialog(false); // Close the dialog after success
             setEditingSlide(null); // Reset the editing slide
         } catch (error) {
-            console.error('Error updating collection:', error); // Handle any potential errors
+            console.error('Error updating collection:', error); // Handle errors
+        }
+    };
+
+    // Function to duplicate a slide
+    const duplicateSlide = async (slide: Slide) => {
+        if (!activeCollection) return;
+
+        const newSlide = {
+            _id: generateSlideId(activeCollection._id), // Generate a new ID for the slide
+            title: `${slide.title} (Copy)`,
+            content: slide.content,
+        };
+
+        const updatedSlides = [...activeCollection.slides, newSlide];
+
+        const updatedCollection = {
+            ...activeCollection,
+            slides: updatedSlides,
+        };
+
+        try {
+            await updateCollection(updatedCollection); // Update collection with new slide
+        } catch (error) {
+            console.error('Error duplicating slide:', error);
         }
     };
 
@@ -164,41 +192,51 @@ const Slides: React.FC<SlidesProps> = ({
                                 >
                                     {slide.title}
                                 </Text>
-                                <Group gap={0}>
-                                    <ActionIcon
-                                        variant="transparent"
-                                        aria-label="Edit"
-                                        onClick={(e) => {
-                                            e.stopPropagation(); // Prevent parent click event
-                                            openSlideDialog(slide);
-                                        }}
-                                    >
-                                        <IconEdit
-                                            style={{
-                                                width: '70%',
-                                                height: '70%',
-                                            }}
-                                            stroke={1}
-                                        />
-                                    </ActionIcon>
-                                    <ActionIcon
-                                        variant="transparent"
-                                        color="red"
-                                        aria-label="Delete"
-                                        onClick={(e) => {
-                                            e.stopPropagation(); // Prevent parent click event
-                                            openDeleteDialog(slide);
-                                        }}
-                                    >
-                                        <IconX
-                                            style={{
-                                                width: '70%',
-                                                height: '70%',
-                                            }}
-                                            stroke={1}
-                                        />
-                                    </ActionIcon>
-                                </Group>
+                                <Menu
+                                    withinPortal
+                                    position="bottom-end"
+                                    shadow="sm"
+                                >
+                                    <Menu.Target>
+                                        <ActionIcon>
+                                            <IconDotsVertical size={16} />
+                                        </ActionIcon>
+                                    </Menu.Target>
+
+                                    <Menu.Dropdown>
+                                        <Menu.Item
+                                            onClick={() =>
+                                                openSlideDialog(slide)
+                                            }
+                                        >
+                                            <Group>
+                                                <IconEdit size={16} />
+                                                <Text>Edit</Text>
+                                            </Group>
+                                        </Menu.Item>
+                                        <Menu.Item
+                                            onClick={() =>
+                                                duplicateSlide(slide)
+                                            }
+                                        >
+                                            <Group>
+                                                <IconEdit size={16} />
+                                                <Text>Duplicate</Text>
+                                            </Group>
+                                        </Menu.Item>
+                                        <Menu.Item
+                                            color="red"
+                                            onClick={() =>
+                                                openDeleteDialog(slide)
+                                            }
+                                        >
+                                            <Group>
+                                                <IconX size={16} />
+                                                <Text>Delete</Text>
+                                            </Group>
+                                        </Menu.Item>
+                                    </Menu.Dropdown>
+                                </Menu>
                             </Group>
                         ))
                     ) : (

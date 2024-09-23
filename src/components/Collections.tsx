@@ -1,6 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Stack, Text, Group, ActionIcon } from '@mantine/core';
-import { IconPlus, IconEdit, IconX } from '@tabler/icons-react';
+import { Stack, Text, Group, ActionIcon, Menu } from '@mantine/core';
+import {
+    IconPlus,
+    IconEdit,
+    IconX,
+    IconDotsVertical,
+} from '@tabler/icons-react';
 import CollectionForm from './CollectionForm';
 import CustomDialog from './CustomDialog';
 import axios from 'axios';
@@ -14,13 +19,13 @@ interface Slide {
 
 interface Collection {
     _id: string;
-    title: string; // Ensure title is always a string
-    description: string; // Ensure description is always a string
+    title: string;
+    description: string;
     slides: Slide[];
 }
 
 interface CollectionsProps {
-    onSelectCollection: (collection: Collection | null) => void; // Allow null for deselecting collections
+    onSelectCollection: (collection: Collection | null) => void;
     activeCollection: Collection | null;
 }
 
@@ -72,6 +77,27 @@ const Collections: React.FC<CollectionsProps> = ({
         }
     };
 
+    // Function to duplicate a collection
+    const duplicateCollection = async (collection: Collection) => {
+        try {
+            const newCollection = {
+                ...collection,
+                _id: undefined, // Remove the existing ID to generate a new one
+                title: `${collection.title} (Copy)`, // Append "Copy" to the title
+            };
+            const response = await axios.post(
+                'http://localhost:5001/collections',
+                newCollection
+            );
+            setCollections((prevCollections) => [
+                ...prevCollections,
+                response.data,
+            ]);
+        } catch (error) {
+            console.error('Error duplicating collection:', error);
+        }
+    };
+
     // Handle creating or updating a collection
     const handleCollectionSubmit = async (collectionData: {
         _id?: string;
@@ -80,7 +106,6 @@ const Collections: React.FC<CollectionsProps> = ({
         slides: any[];
     }) => {
         try {
-            // Add a fallback for _id if it's undefined (for new collections)
             if (collectionData._id) {
                 // If _id is present, update the collection (PUT request)
                 const response = await axios.put(
@@ -218,30 +243,46 @@ const Collections: React.FC<CollectionsProps> = ({
                         >
                             {collection.title}
                         </Text>
-                        <Group pt={1} gap={5}>
-                            <ActionIcon
-                                color="gray"
-                                variant="transparent"
-                                aria-label="Edit"
-                                onClick={() => openCreateEditDialog(collection)}
-                            >
-                                <IconEdit
-                                    style={{ width: '90%', height: '90%' }}
-                                    stroke={1}
-                                />
-                            </ActionIcon>
-                            <ActionIcon
-                                color="gray"
-                                variant="transparent"
-                                aria-label="Delete"
-                                onClick={() => openDeleteDialog(collection)}
-                            >
-                                <IconX
-                                    style={{ width: '90%', height: '90%' }}
-                                    stroke={1}
-                                />
-                            </ActionIcon>
-                        </Group>
+                        <Menu withinPortal position="bottom-end" shadow="sm">
+                            <Menu.Target>
+                                <ActionIcon>
+                                    <IconDotsVertical size={16} />
+                                </ActionIcon>
+                            </Menu.Target>
+
+                            <Menu.Dropdown>
+                                <Menu.Item
+                                    onClick={() =>
+                                        openCreateEditDialog(collection)
+                                    }
+                                >
+                                    <Group>
+                                        <IconEdit size={16} />
+                                        <Text>Edit</Text>
+                                    </Group>
+                                </Menu.Item>
+                                <Menu.Item
+                                    onClick={() =>
+                                        duplicateCollection(collection)
+                                    }
+                                >
+                                    <Group>
+                                        <IconEdit size={16} />{' '}
+                                        {/* Reusing for now */}
+                                        <Text>Duplicate</Text>
+                                    </Group>
+                                </Menu.Item>
+                                <Menu.Item
+                                    color="red"
+                                    onClick={() => openDeleteDialog(collection)}
+                                >
+                                    <Group>
+                                        <IconX size={16} />
+                                        <Text>Delete</Text>
+                                    </Group>
+                                </Menu.Item>
+                            </Menu.Dropdown>
+                        </Menu>
                     </Group>
                 ))
             ) : (
