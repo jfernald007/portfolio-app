@@ -51,6 +51,22 @@ app.post('/collections', async (req, res) => {
     }
 });
 
+// Fetch a specific collection by ID from the database
+app.get('/collections/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const collection = await Collection.findById(id); // Fetch collection by ID from MongoDB
+
+        if (collection) {
+            res.json(collection); // Return the specific collection if found
+        } else {
+            res.status(404).json({ message: 'Collection not found' }); // Return a 404 if not found
+        }
+    } catch (error) {
+        res.status(500).json({ message: 'Error fetching collection', error });
+    }
+});
+
 // Update an existing collection and its slides in the database
 const { v4: uuidv4 } = require('uuid'); // Import uuid for generating unique IDs
 

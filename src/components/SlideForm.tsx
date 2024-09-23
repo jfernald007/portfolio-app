@@ -1,7 +1,26 @@
 import React, { useState, useEffect } from 'react';
 import { TextInput, Textarea, Button, Stack, Group } from '@mantine/core';
 
-const SlideForm = ({ initialValues = {}, onSubmit, onCancel }) => {
+// Define the type for the form's initial values
+interface SlideFormProps {
+    initialValues: {
+        _id?: string;
+        title?: string;
+        content?: string;
+    };
+    onSubmit: (slideData: {
+        _id?: string;
+        title: string;
+        content: string;
+    }) => void;
+    onCancel: () => void;
+}
+
+const SlideForm: React.FC<SlideFormProps> = ({
+    initialValues = {},
+    onSubmit,
+    onCancel,
+}) => {
     const [title, setTitle] = useState(initialValues.title || '');
     const [content, setContent] = useState(initialValues.content || '');
     const [isChanged, setIsChanged] = useState(false);
@@ -17,7 +36,7 @@ const SlideForm = ({ initialValues = {}, onSubmit, onCancel }) => {
     const isSaveDisabled =
         title.trim() === '' || content.trim() === '' || !isChanged;
 
-    const handleSubmit = (e) => {
+    const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (!isSaveDisabled) {
             onSubmit({ _id: initialValues._id, title, content });
@@ -26,7 +45,7 @@ const SlideForm = ({ initialValues = {}, onSubmit, onCancel }) => {
 
     return (
         <form onSubmit={handleSubmit}>
-            <Stack spacing="md">
+            <Stack gap="md">
                 <TextInput
                     label="Slide Title"
                     placeholder="Enter slide title"
@@ -41,7 +60,7 @@ const SlideForm = ({ initialValues = {}, onSubmit, onCancel }) => {
                     onChange={(e) => setContent(e.target.value)}
                     required
                 />
-                <Group position="right" mt="md">
+                <Group mt="md">
                     <Button variant="outline" onClick={onCancel}>
                         Cancel
                     </Button>

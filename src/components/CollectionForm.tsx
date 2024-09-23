@@ -1,46 +1,61 @@
 import React, { useState, useEffect } from 'react';
 import { TextInput, Textarea, Button, Stack, Group } from '@mantine/core';
 
-const CollectionForm = ({ initialValues = {}, onSubmit, onCancel }) => {
+interface CollectionFormProps {
+    initialValues: {
+        _id?: string;
+        title: string;
+        description: string;
+    };
+    onSubmit: (collectionData: {
+        _id?: string;
+        title: string;
+        description: string;
+        slides: any[]; // Include slides in the form data
+    }) => void;
+    onCancel: () => void;
+}
+
+const CollectionForm: React.FC<CollectionFormProps> = ({
+    initialValues = { title: '', description: '' },
+    onSubmit,
+    onCancel,
+}) => {
     const [title, setTitle] = useState(initialValues.title || '');
     const [description, setDescription] = useState(
         initialValues.description || ''
     );
-    const [isChanged, setIsChanged] = useState(false); // Track if any changes have been made
+    const [isChanged, setIsChanged] = useState(false);
 
     // Check if the form fields are different from the initial values (for editing)
     useEffect(() => {
-        if (initialValues.title || initialValues.description) {
-            const isFormChanged =
-                title !== initialValues.title ||
-                description !== initialValues.description;
-            setIsChanged(isFormChanged);
-        }
+        const isFormChanged =
+            title !== initialValues.title ||
+            description !== initialValues.description;
+        setIsChanged(isFormChanged);
     }, [title, description, initialValues]);
 
-    // Disable the save button if required fields are not filled
-    const isSaveDisabled =
+    // Ensure isSaveDisabled is boolean
+    const isSaveDisabled: boolean =
         title.trim() === '' ||
         description.trim() === '' ||
-        (!isChanged && initialValues.title);
+        (!isChanged && Boolean(initialValues.title));
 
-    const handleSubmit = (e) => {
+    const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (!isSaveDisabled) {
-            // Pass the _id when editing a collection
-            onSubmit({ _id: initialValues._id, title, description });
+            onSubmit({
+                _id: initialValues._id,
+                title,
+                description,
+                slides: [],
+            });
         }
-    };
-
-    const handleCancel = () => {
-        setTitle(initialValues.title || ''); // Reset the title field
-        setDescription(initialValues.description || ''); // Reset the description field
-        onCancel(); // Trigger the cancel action to close the form
     };
 
     return (
         <form onSubmit={handleSubmit}>
-            <Stack spacing="md">
+            <Stack gap="md">
                 <TextInput
                     label="Collection Title"
                     placeholder="Enter collection title"
@@ -55,9 +70,8 @@ const CollectionForm = ({ initialValues = {}, onSubmit, onCancel }) => {
                     onChange={(e) => setDescription(e.target.value)}
                     required
                 />
-
-                <Group position="right" mt="md">
-                    <Button variant="outline" onClick={handleCancel}>
+                <Group mt="md">
+                    <Button variant="outline" onClick={onCancel}>
                         Cancel
                     </Button>
                     <Button type="submit" disabled={isSaveDisabled}>

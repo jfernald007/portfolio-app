@@ -1,11 +1,24 @@
 import React from 'react';
 import { Modal, Text, Button, Group } from '@mantine/core';
 
-const ConfirmationDialog = ({ opened, onClose, onConfirm, itemName }) => {
+// Define the props interface
+interface ConfirmationDialogProps {
+    opened: boolean;
+    onClose: () => void;
+    onConfirm: () => void;
+    itemName: string;
+}
+
+const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
+    opened,
+    onClose,
+    onConfirm,
+    itemName,
+}) => {
     return (
         <Modal opened={opened} onClose={onClose} title="Confirm Deletion">
             <Text>Are you sure you want to delete "{itemName}"?</Text>
-            <Group position="right" mt="md">
+            <Group mt="md">
                 <Button variant="outline" onClick={onClose}>
                     Cancel
                 </Button>

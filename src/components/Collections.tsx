@@ -1,15 +1,40 @@
 import React, { useState, useEffect } from 'react';
-import { Stack, Text, Button, Group, ActionIcon } from '@mantine/core';
+import { Stack, Text, Group, ActionIcon } from '@mantine/core';
 import { IconPlus, IconEdit, IconX } from '@tabler/icons-react';
 import CollectionForm from './CollectionForm';
-import CustomDialog from './CustomDialog'; // Import the reusable dialog
+import CustomDialog from './CustomDialog';
 import axios from 'axios';
 
-const Collections = ({ onSelectCollection, activeCollection }) => {
-    const [collections, setCollections] = useState([]); // Collection list
-    const [editingCollection, setEditingCollection] = useState(null); // For editing
-    const [showDialog, setShowDialog] = useState(false); // For showing/hiding the dialog
-    const [dialogContent, setDialogContent] = useState(null); // Content for dialog
+// Define types for Slide and Collection
+interface Slide {
+    _id: string;
+    title: string;
+    content: string;
+}
+
+interface Collection {
+    _id: string;
+    title: string; // Ensure title is always a string
+    description: string; // Ensure description is always a string
+    slides: Slide[];
+}
+
+interface CollectionsProps {
+    onSelectCollection: (collection: Collection | null) => void; // Allow null for deselecting collections
+    activeCollection: Collection | null;
+}
+
+const Collections: React.FC<CollectionsProps> = ({
+    onSelectCollection,
+    activeCollection,
+}) => {
+    const [collections, setCollections] = useState<Collection[]>([]); // Collection list
+    const [editingCollection, setEditingCollection] =
+        useState<Collection | null>(null); // For editing
+    const [showDialog, setShowDialog] = useState(false); // Control for showing/hiding the dialog
+    const [dialogContent, setDialogContent] = useState<React.ReactNode | null>(
+        null
+    ); // Content for dialog
     const [dialogTitle, setDialogTitle] = useState(''); // Title for the dialog
     const [showButtons, setShowButtons] = useState(false); // Control dialog buttons for confirmation
 
@@ -30,37 +55,32 @@ const Collections = ({ onSelectCollection, activeCollection }) => {
     }, []);
 
     // Function to update a collection (e.g., adding, editing, or deleting slides)
-    const updateCollection = async (updatedCollection) => {
+    const updateCollection = async (updatedCollection: Collection) => {
         try {
-            console.log(
-                'Sending updated collection to backend:',
-                updatedCollection
-            ); // Debugging
-
             const response = await axios.put(
                 `http://localhost:5001/collections/${updatedCollection._id}`,
                 updatedCollection
             );
 
-            console.log('Backend response:', response.data); // Check the backend response
-
-            // Update the state after saving
             setCollections((prevCollections) =>
                 prevCollections.map((col) =>
                     col._id === updatedCollection._id ? response.data : col
                 )
             );
         } catch (error) {
-            console.error(
-                'Error updating collection:',
-                error.response || error.message
-            );
+            console.error('Error updating collection:', error);
         }
     };
 
     // Handle creating or updating a collection
-    const handleCollectionSubmit = async (collectionData) => {
+    const handleCollectionSubmit = async (collectionData: {
+        _id?: string;
+        title: string;
+        description: string;
+        slides: any[];
+    }) => {
         try {
+            // Add a fallback for _id if it's undefined (for new collections)
             if (collectionData._id) {
                 // If _id is present, update the collection (PUT request)
                 const response = await axios.put(
@@ -70,17 +90,23 @@ const Collections = ({ onSelectCollection, activeCollection }) => {
                 const updatedCollection = response.data;
 
                 // Update the existing collection in the state
-                const updatedCollections = collections.map((col) =>
-                    col._id === updatedCollection._id ? updatedCollection : col
+                setCollections((prevCollections) =>
+                    prevCollections.map((col) =>
+                        col._id === updatedCollection._id
+                            ? updatedCollection
+                            : col
+                    )
                 );
-                setCollections(updatedCollections);
             } else {
                 // If no _id, create a new collection (POST request)
                 const response = await axios.post(
                     'http://localhost:5001/collections',
                     collectionData
                 );
-                setCollections([...collections, response.data]); // Add the new collection
+                setCollections((prevCollections) => [
+                    ...prevCollections,
+                    response.data,
+                ]);
             }
 
             setShowDialog(false); // Close the dialog after submit
@@ -91,14 +117,14 @@ const Collections = ({ onSelectCollection, activeCollection }) => {
     };
 
     // Handle delete action
-    const handleDeleteCollection = async (collectionId) => {
+    const handleDeleteCollection = async (collectionId: string) => {
         try {
             await axios.delete(
                 `http://localhost:5001/collections/${collectionId}`
             );
-            setCollections(
-                collections.filter((col) => col._id !== collectionId)
-            ); // Remove the collection
+            setCollections((prevCollections) =>
+                prevCollections.filter((col) => col._id !== collectionId)
+            );
             setShowDialog(false); // Close the dialog after deletion
         } catch (error) {
             console.error('Error deleting collection:', error);
@@ -106,12 +132,20 @@ const Collections = ({ onSelectCollection, activeCollection }) => {
     };
 
     // Open the dialog for creating/editing collections
-    const openCreateEditDialog = (collection = null) => {
+    const openCreateEditDialog = (collection: Collection | null = null) => {
+        const initialValues = collection
+            ? {
+                  ...collection,
+                  description: collection.description || '',
+                  slides: collection.slides || [],
+              }
+            : { title: '', description: '', slides: [] }; // Default values for new collection
+
         setEditingCollection(collection); // Set the collection to edit (or null for new)
         setDialogTitle(collection ? 'Edit Collection' : 'Create Collection'); // Set the title
         setDialogContent(
             <CollectionForm
-                initialValues={collection || {}}
+                initialValues={initialValues} // Pass the prepared initial values
                 onSubmit={handleCollectionSubmit}
                 onCancel={() => setShowDialog(false)}
             />
@@ -121,7 +155,7 @@ const Collections = ({ onSelectCollection, activeCollection }) => {
     };
 
     // Open the dialog for deleting a collection
-    const openDeleteDialog = (collection) => {
+    const openDeleteDialog = (collection: Collection) => {
         setEditingCollection(collection); // Set the collection to delete
         setDialogTitle('Delete Collection'); // Set the title
         setDialogContent(
@@ -135,22 +169,18 @@ const Collections = ({ onSelectCollection, activeCollection }) => {
     };
 
     return (
-        <Stack>
-            {/* Title and Create Button aligned */}
+        <Stack gap={5}>
             <Group w={300} gap={7} preventGrowOverflow>
-                <Text truncate weight={600} size="lg" w={'calc(100% - 35px)'}>
+                <Text truncate fw={600} size="lg" w={'calc(100% - 35px)'}>
                     Collections
                 </Text>
                 <ActionIcon
                     variant="transparent"
-                    aria-label="Settings"
+                    aria-label="Add"
                     onClick={() => openCreateEditDialog()}
                 >
                     <IconPlus
-                        style={{
-                            width: '90%',
-                            height: '90%',
-                        }}
+                        style={{ width: '90%', height: '90%' }}
                         stroke={1}
                     />
                 </ActionIcon>
@@ -159,50 +189,55 @@ const Collections = ({ onSelectCollection, activeCollection }) => {
             {collections.length > 0 ? (
                 collections.map((collection) => (
                     <Group
+                        pr={5}
                         w={300}
                         gap={9}
                         preventGrowOverflow
                         key={collection._id}
+                        className={`collectionGroup ${
+                            collection._id === activeCollection?._id
+                                ? 'active'
+                                : ''
+                        }`}
                     >
                         <Text
+                            pt={4}
+                            pl={10}
+                            pb={4}
+                            pr={5}
                             truncate
                             w={'calc(100% - 70px)'}
-                            onClick={() => onSelectCollection(collection)} // Set active collection
+                            onClick={() => onSelectCollection(collection)}
                             style={{
                                 cursor: 'pointer',
                                 color:
-                                    collection === activeCollection
-                                        ? 'blue'
-                                        : 'black',
+                                    collection._id === activeCollection?._id
+                                        ? 'indigo'
+                                        : '#000',
                             }}
                         >
                             {collection.title}
                         </Text>
-                        <Group gap={5}>
+                        <Group pt={1} gap={5}>
                             <ActionIcon
+                                color="gray"
                                 variant="transparent"
-                                aria-label="Settings"
+                                aria-label="Edit"
                                 onClick={() => openCreateEditDialog(collection)}
                             >
                                 <IconEdit
-                                    style={{
-                                        width: '90%',
-                                        height: '90%',
-                                    }}
+                                    style={{ width: '90%', height: '90%' }}
                                     stroke={1}
                                 />
                             </ActionIcon>
                             <ActionIcon
+                                color="gray"
                                 variant="transparent"
-                                color="red"
-                                aria-label="Settings"
+                                aria-label="Delete"
                                 onClick={() => openDeleteDialog(collection)}
                             >
                                 <IconX
-                                    style={{
-                                        width: '90%',
-                                        height: '90%',
-                                    }}
+                                    style={{ width: '90%', height: '90%' }}
                                     stroke={1}
                                 />
                             </ActionIcon>
@@ -213,16 +248,17 @@ const Collections = ({ onSelectCollection, activeCollection }) => {
                 <Text>No collections yet.</Text>
             )}
 
-            {/* Reusable Custom Dialog */}
             <CustomDialog
                 opened={showDialog}
                 title={dialogTitle}
                 content={dialogContent}
-                onConfirm={() => handleDeleteCollection(editingCollection._id)}
+                onConfirm={() =>
+                    handleDeleteCollection(editingCollection?._id ?? '')
+                }
                 onCancel={() => setShowDialog(false)}
                 confirmLabel="Delete"
                 cancelLabel="Cancel"
-                showButtons={showButtons} // Show buttons only for confirmation actions
+                showButtons={showButtons}
             />
         </Stack>
     );
