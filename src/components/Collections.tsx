@@ -9,6 +9,7 @@ import {
 import CollectionForm from './CollectionForm';
 import CustomDialog from './CustomDialog';
 import axios from 'axios';
+import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 
 // Define types for Slide and Collection
 interface Slide {
@@ -58,6 +59,26 @@ const Collections: React.FC<CollectionsProps> = ({
 
         fetchCollections();
     }, [activeCollection]); // Refetch collections whenever the active collection changes
+
+    // Handle the drag and drop event
+    const onDragEnd = (result: any) => {
+        const { destination, source } = result;
+
+        // If dropped outside the list, do nothing
+        if (!destination) {
+            return;
+        }
+
+        // Reorder collections array
+        const reorderedCollections = Array.from(collections);
+        const [removed] = reorderedCollections.splice(source.index, 1);
+        reorderedCollections.splice(destination.index, 0, removed);
+
+        setCollections(reorderedCollections);
+
+        // Optionally, save the new order to the backend
+        // Example: axios.put('/api/collections/order', reorderedCollections);
+    };
 
     // Function to update a collection (e.g., adding, editing, or deleting slides)
     const updateCollection = async (updatedCollection: Collection) => {
@@ -210,114 +231,169 @@ const Collections: React.FC<CollectionsProps> = ({
     };
 
     return (
-        <Stack gap={5}>
-            <Group w={300} gap={7} preventGrowOverflow>
-                <Text truncate fw={600} size="lg" w={'calc(100% - 35px)'}>
-                    Collections
-                </Text>
-                <ActionIcon
-                    variant="transparent"
-                    aria-label="Add"
-                    onClick={() => openCreateEditDialog()}
-                >
-                    <IconPlus
-                        style={{ width: '90%', height: '90%' }}
-                        stroke={1}
-                    />
-                </ActionIcon>
-            </Group>
-
-            {collections.length > 0 ? (
-                collections.map((collection) => (
-                    <Group
-                        pr={5}
-                        w={300}
-                        gap={9}
-                        preventGrowOverflow
-                        key={collection._id}
-                        className={`collectionGroup ${
-                            collection._id === activeCollection?._id
-                                ? 'active'
-                                : ''
-                        }`}
+        <DragDropContext onDragEnd={onDragEnd}>
+            <Droppable droppableId="collections-list">
+                {(provided) => (
+                    <Stack
+                        {...provided.droppableProps}
+                        ref={provided.innerRef} // Ensure the innerRef is passed correctly here
+                        gap={5}
                     >
-                        <Text
-                            pt={4}
-                            pl={10}
-                            pb={4}
-                            pr={5}
-                            truncate
-                            w={'calc(100% - 70px)'}
-                            onClick={() => onSelectCollection(collection)}
-                            style={{
-                                cursor: 'pointer',
-                                color:
-                                    collection._id === activeCollection?._id
-                                        ? 'indigo'
-                                        : '#000',
-                            }}
-                        >
-                            {collection.title}
-                        </Text>
-                        <Menu withinPortal position="bottom-end" shadow="sm">
-                            <Menu.Target>
-                                <ActionIcon>
-                                    <IconDotsVertical size={16} />
-                                </ActionIcon>
-                            </Menu.Target>
+                        <Group w={300} gap={7} preventGrowOverflow>
+                            <Text
+                                truncate
+                                fw={600}
+                                size="lg"
+                                w={'calc(100% - 35px)'}
+                            >
+                                Collections
+                            </Text>
+                            <ActionIcon
+                                variant="transparent"
+                                aria-label="Add"
+                                onClick={() => openCreateEditDialog()}
+                            >
+                                <IconPlus
+                                    style={{ width: '90%', height: '90%' }}
+                                    stroke={1}
+                                />
+                            </ActionIcon>
+                        </Group>
 
-                            <Menu.Dropdown>
-                                <Menu.Item
-                                    onClick={() =>
-                                        openCreateEditDialog(collection)
-                                    }
+                        {collections.length > 0 ? (
+                            collections.map((collection, index) => (
+                                <Draggable
+                                    key={collection._id}
+                                    draggableId={collection._id}
+                                    index={index}
                                 >
-                                    <Group>
-                                        <IconEdit size={16} />
-                                        <Text>Edit</Text>
-                                    </Group>
-                                </Menu.Item>
-                                <Menu.Item
-                                    onClick={() =>
-                                        duplicateCollection(collection)
-                                    }
-                                >
-                                    <Group>
-                                        <IconEdit size={16} />{' '}
-                                        {/* Reusing for now */}
-                                        <Text>Duplicate</Text>
-                                    </Group>
-                                </Menu.Item>
-                                <Menu.Item
-                                    color="red"
-                                    onClick={() => openDeleteDialog(collection)}
-                                >
-                                    <Group>
-                                        <IconX size={16} />
-                                        <Text>Delete</Text>
-                                    </Group>
-                                </Menu.Item>
-                            </Menu.Dropdown>
-                        </Menu>
-                    </Group>
-                ))
-            ) : (
-                <Text>No collections yet.</Text>
-            )}
+                                    {(provided) => (
+                                        <Group
+                                            {...provided.draggableProps}
+                                            {...provided.dragHandleProps}
+                                            ref={provided.innerRef} // Ensure innerRef is passed here too
+                                            pr={5}
+                                            w={300}
+                                            gap={9}
+                                            preventGrowOverflow
+                                            key={collection._id}
+                                            className={`collectionGroup ${
+                                                collection._id ===
+                                                activeCollection?._id
+                                                    ? 'active'
+                                                    : ''
+                                            }`}
+                                        >
+                                            <Text
+                                                pt={4}
+                                                pl={10}
+                                                pb={4}
+                                                pr={5}
+                                                truncate
+                                                w={'calc(100% - 70px)'}
+                                                onClick={() =>
+                                                    onSelectCollection(
+                                                        collection
+                                                    )
+                                                }
+                                                style={{
+                                                    cursor: 'pointer',
+                                                    color:
+                                                        collection._id ===
+                                                        activeCollection?._id
+                                                            ? 'indigo'
+                                                            : '#000',
+                                                }}
+                                            >
+                                                {collection.title}
+                                            </Text>
+                                            <Menu
+                                                withinPortal
+                                                position="bottom-end"
+                                                shadow="sm"
+                                            >
+                                                <Menu.Target>
+                                                    <ActionIcon>
+                                                        <IconDotsVertical
+                                                            size={16}
+                                                        />
+                                                    </ActionIcon>
+                                                </Menu.Target>
 
-            <CustomDialog
-                opened={showDialog}
-                title={dialogTitle}
-                content={dialogContent}
-                onConfirm={() =>
-                    handleDeleteCollection(editingCollection?._id ?? '')
-                }
-                onCancel={() => setShowDialog(false)}
-                confirmLabel="Delete"
-                cancelLabel="Cancel"
-                showButtons={showButtons}
-            />
-        </Stack>
+                                                <Menu.Dropdown>
+                                                    <Menu.Item
+                                                        onClick={() =>
+                                                            openCreateEditDialog(
+                                                                collection
+                                                            )
+                                                        }
+                                                    >
+                                                        <Group>
+                                                            <IconEdit
+                                                                size={16}
+                                                            />
+                                                            <Text>Edit</Text>
+                                                        </Group>
+                                                    </Menu.Item>
+                                                    <Menu.Item
+                                                        onClick={() =>
+                                                            duplicateCollection(
+                                                                collection
+                                                            )
+                                                        }
+                                                    >
+                                                        <Group>
+                                                            <IconEdit
+                                                                size={16}
+                                                            />{' '}
+                                                            {/* Reusing for now */}
+                                                            <Text>
+                                                                Duplicate
+                                                            </Text>
+                                                        </Group>
+                                                    </Menu.Item>
+                                                    <Menu.Item
+                                                        color="red"
+                                                        onClick={() =>
+                                                            openDeleteDialog(
+                                                                collection
+                                                            )
+                                                        }
+                                                    >
+                                                        <Group>
+                                                            <IconX size={16} />
+                                                            <Text>Delete</Text>
+                                                        </Group>
+                                                    </Menu.Item>
+                                                </Menu.Dropdown>
+                                            </Menu>
+                                        </Group>
+                                    )}
+                                </Draggable>
+                            ))
+                        ) : (
+                            <Text>No collections yet.</Text>
+                        )}
+
+                        <CustomDialog
+                            opened={showDialog}
+                            title={dialogTitle}
+                            content={dialogContent}
+                            onConfirm={() =>
+                                handleDeleteCollection(
+                                    editingCollection?._id ?? ''
+                                )
+                            }
+                            onCancel={() => setShowDialog(false)}
+                            confirmLabel="Delete"
+                            cancelLabel="Cancel"
+                            showButtons={showButtons}
+                        />
+                        {provided.placeholder}
+                    </Stack>
+                )}
+            </Droppable>
+        </DragDropContext>
     );
 };
 
