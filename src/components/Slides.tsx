@@ -30,13 +30,6 @@ interface SlidesProps {
     activeSlide: Slide | null;
 }
 
-// Function to generate a unique ID for slides
-const generateSlideId = (collectionId: string) => {
-    return `${collectionId}_${Date.now()}_${Math.random()
-        .toString(36)
-        .substring(2, 9)}`;
-};
-
 const Slides: React.FC<SlidesProps> = ({
     activeCollection,
     updateCollection,
@@ -58,54 +51,62 @@ const Slides: React.FC<SlidesProps> = ({
             return;
         }
 
-        const updatedSlides = editingSlide
-            ? activeCollection.slides.map((slide) =>
-                  slide._id === editingSlide._id
-                      ? { ...slide, ...slideData } // Only update the existing slide
-                      : slide
-              )
-            : [
-                  ...activeCollection.slides,
-                  {
-                      _id: generateSlideId(activeCollection._id), // Only add `_id` for new slides
-                      title: slideData.title,
-                      content: slideData.content,
-                  },
-              ];
-
-        const updatedCollection: Collection = {
-            ...activeCollection,
-            slides: updatedSlides,
-        };
-
         try {
-            await updateCollection(updatedCollection); // Await the update operation
-            setShowDialog(false); // Close the dialog after success
-            setEditingSlide(null); // Reset the editing slide
+            const response = await fetch(
+                `http://localhost:5001/api/collections/${activeCollection._id}/slides`,
+                {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        title: slideData.title,
+                        content: slideData.content,
+                    }),
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error('Failed to create slide');
+            }
+
+            const updatedCollection = await response.json();
+
+            // After the slide is successfully created and returned, update the state
+            await updateCollection(updatedCollection);
+            setShowDialog(false);
         } catch (error) {
-            console.error('Error updating collection:', error); // Handle errors
+            console.error('Error creating slide:', error);
         }
     };
 
-    // Function to duplicate a slide
+    // Function to duplicate a slide using the backend
     const duplicateSlide = async (slide: Slide) => {
         if (!activeCollection) return;
 
-        const newSlide = {
-            _id: generateSlideId(activeCollection._id), // Generate a new ID for the slide
-            title: `${slide.title} (Copy)`,
-            content: slide.content,
-        };
-
-        const updatedSlides = [...activeCollection.slides, newSlide];
-
-        const updatedCollection = {
-            ...activeCollection,
-            slides: updatedSlides,
-        };
-
         try {
-            await updateCollection(updatedCollection); // Update collection with new slide
+            const response = await fetch(
+                `http://localhost:5001/api/collections/${activeCollection._id}/slides`,
+                {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        title: `${slide.title} (Copy)`,
+                        content: slide.content,
+                    }),
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error('Failed to duplicate slide');
+            }
+
+            const updatedCollection = await response.json();
+
+            // Update the frontend state with the duplicated slide
+            await updateCollection(updatedCollection);
         } catch (error) {
             console.error('Error duplicating slide:', error);
         }
@@ -122,22 +123,31 @@ const Slides: React.FC<SlidesProps> = ({
         setShowDeleteDialog(true);
     };
 
-    const handleDeleteSlide = () => {
+    const handleDeleteSlide = async () => {
         if (!activeCollection || !slideToDelete) return;
 
-        const updatedSlides = activeCollection.slides.filter(
-            (slide) => slide._id !== slideToDelete._id
-        );
+        try {
+            // Make a DELETE request to the backend to remove the slide
+            const response = await fetch(
+                `http://localhost:5001/api/collections/${activeCollection._id}/slides/${slideToDelete._id}`,
+                {
+                    method: 'DELETE',
+                }
+            );
 
-        const updatedCollection = {
-            ...activeCollection,
-            slides: updatedSlides,
-        };
+            if (!response.ok) {
+                throw new Error('Failed to delete slide');
+            }
 
-        updateCollection(updatedCollection).then(() => {
+            const updatedCollection = await response.json();
+
+            // Update the frontend state with the updated collection
+            await updateCollection(updatedCollection);
             setShowDeleteDialog(false);
             setSlideToDelete(null);
-        });
+        } catch (error) {
+            console.error('Error deleting slide:', error);
+        }
     };
 
     return (

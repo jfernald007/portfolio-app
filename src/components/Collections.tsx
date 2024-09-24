@@ -57,19 +57,27 @@ const Collections: React.FC<CollectionsProps> = ({
         };
 
         fetchCollections();
-    }, []);
+    }, [activeCollection]); // Refetch collections whenever the active collection changes
 
     // Function to update a collection (e.g., adding, editing, or deleting slides)
     const updateCollection = async (updatedCollection: Collection) => {
         try {
+            // After updating the collection, fetch the updated collection from the backend
             const response = await axios.put(
                 `http://localhost:5001/collections/${updatedCollection._id}`,
                 updatedCollection
             );
 
+            // Refetch the updated collection after the update is completed
+            const refreshedCollection = await axios.get(
+                `http://localhost:5001/collections/${updatedCollection._id}`
+            );
+
             setCollections((prevCollections) =>
                 prevCollections.map((col) =>
-                    col._id === updatedCollection._id ? response.data : col
+                    col._id === updatedCollection._id
+                        ? refreshedCollection.data
+                        : col
                 )
             );
         } catch (error) {
@@ -145,8 +153,9 @@ const Collections: React.FC<CollectionsProps> = ({
     const handleDeleteCollection = async (collectionId: string) => {
         try {
             await axios.delete(
-                `http://localhost:5001/collections/${collectionId}`
+                `http://localhost:5001/api/collections/${collectionId}`
             );
+
             setCollections((prevCollections) =>
                 prevCollections.filter((col) => col._id !== collectionId)
             );
