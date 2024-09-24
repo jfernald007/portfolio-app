@@ -52,31 +52,57 @@ const Slides: React.FC<SlidesProps> = ({
         }
 
         try {
-            const response = await fetch(
-                `http://localhost:5001/api/collections/${activeCollection._id}/slides`,
-                {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        title: slideData.title,
-                        content: slideData.content,
-                    }),
-                }
-            );
+            let response;
+
+            // Check if editing an existing slide
+            if (editingSlide) {
+                // Send a PUT request to update the existing slide
+                response = await fetch(
+                    `http://localhost:5001/api/collections/${activeCollection._id}/slides/${editingSlide._id}`,
+                    {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            title: slideData.title,
+                            content: slideData.content,
+                        }),
+                    }
+                );
+            } else {
+                // If not editing, create a new slide (POST request)
+                response = await fetch(
+                    `http://localhost:5001/api/collections/${activeCollection._id}/slides`,
+                    {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            title: slideData.title,
+                            content: slideData.content,
+                        }),
+                    }
+                );
+            }
 
             if (!response.ok) {
-                throw new Error('Failed to create slide');
+                throw new Error(
+                    editingSlide
+                        ? 'Failed to update slide'
+                        : 'Failed to create slide'
+                );
             }
 
             const updatedCollection = await response.json();
 
-            // After the slide is successfully created and returned, update the state
+            // After successfully creating or updating the slide, update the state
             await updateCollection(updatedCollection);
             setShowDialog(false);
+            setEditingSlide(null); // Reset the editing state after save
         } catch (error) {
-            console.error('Error creating slide:', error);
+            console.error('Error saving slide:', error);
         }
     };
 

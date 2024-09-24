@@ -102,6 +102,37 @@ app.put('/collections/:id', async (req, res) => {
     }
 });
 
+app.put('/api/collections/:collectionId/slides/:slideId', async (req, res) => {
+    const { collectionId, slideId } = req.params;
+    const { title, content } = req.body;
+
+    try {
+        // Find the collection
+        const collection = await Collection.findById(collectionId);
+        if (!collection) {
+            return res.status(404).json({ message: 'Collection not found' });
+        }
+
+        // Find the slide to update
+        const slide = collection.slides.id(slideId);
+        if (!slide) {
+            return res.status(404).json({ message: 'Slide not found' });
+        }
+
+        // Update the slide's title and content
+        slide.title = title;
+        slide.content = content;
+
+        // Save the collection with the updated slide
+        await collection.save();
+
+        res.status(200).json(collection);
+    } catch (error) {
+        console.error('Error updating slide:', error);
+        res.status(500).json({ message: 'Error updating slide', error });
+    }
+});
+
 // New Route: Create a new slide within a collection
 app.post('/api/collections/:collectionId/slides', async (req, res) => {
     const { collectionId } = req.params;
