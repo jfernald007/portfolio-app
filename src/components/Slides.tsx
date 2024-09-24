@@ -1,6 +1,11 @@
 import React, { useState } from 'react';
-import { Stack, Text, Group, ActionIcon } from '@mantine/core';
-import { IconPlus, IconEdit, IconX } from '@tabler/icons-react';
+import { Stack, Text, Group, ActionIcon, Menu } from '@mantine/core';
+import {
+    IconPlus,
+    IconEdit,
+    IconX,
+    IconDotsVertical,
+} from '@tabler/icons-react';
 import SlideForm from './SlideForm';
 import CustomDialog from './CustomDialog';
 
@@ -25,13 +30,6 @@ interface SlidesProps {
     activeSlide: Slide | null;
 }
 
-// Function to generate a unique ID for slides
-const generateSlideId = (collectionId: string) => {
-    return `${collectionId}_${Date.now()}_${Math.random()
-        .toString(36)
-        .substring(2, 9)}`;
-};
-
 const Slides: React.FC<SlidesProps> = ({
     activeCollection,
     updateCollection,
@@ -49,37 +47,94 @@ const Slides: React.FC<SlidesProps> = ({
         if (!activeCollection) return;
 
         if (!slideData.title || !slideData.content) {
-            // Ensure title and content are provided
             console.error('Title and content are required');
             return;
         }
 
-        const updatedSlides = editingSlide
-            ? activeCollection.slides.map((slide) =>
-                  slide._id === editingSlide._id
-                      ? { ...slide, ...slideData } // Only update the existing slide
-                      : slide
-              )
-            : [
-                  ...activeCollection.slides,
-                  {
-                      _id: generateSlideId(activeCollection._id), // Only add `_id` for new slides
-                      title: slideData.title, // Title is now required
-                      content: slideData.content, // Content is now required
-                  },
-              ];
+        try {
+            let response;
 
-        const updatedCollection: Collection = {
-            ...activeCollection,
-            slides: updatedSlides,
-        };
+            // Check if editing an existing slide
+            if (editingSlide) {
+                // Send a PUT request to update the existing slide
+                response = await fetch(
+                    `http://localhost:5001/api/collections/${activeCollection._id}/slides/${editingSlide._id}`,
+                    {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            title: slideData.title,
+                            content: slideData.content,
+                        }),
+                    }
+                );
+            } else {
+                // If not editing, create a new slide (POST request)
+                response = await fetch(
+                    `http://localhost:5001/api/collections/${activeCollection._id}/slides`,
+                    {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            title: slideData.title,
+                            content: slideData.content,
+                        }),
+                    }
+                );
+            }
+
+            if (!response.ok) {
+                throw new Error(
+                    editingSlide
+                        ? 'Failed to update slide'
+                        : 'Failed to create slide'
+                );
+            }
+
+            const updatedCollection = await response.json();
+
+            // After successfully creating or updating the slide, update the state
+            await updateCollection(updatedCollection);
+            setShowDialog(false);
+            setEditingSlide(null); // Reset the editing state after save
+        } catch (error) {
+            console.error('Error saving slide:', error);
+        }
+    };
+
+    // Function to duplicate a slide using the backend
+    const duplicateSlide = async (slide: Slide) => {
+        if (!activeCollection) return;
 
         try {
-            await updateCollection(updatedCollection); // Await the update operation
-            setShowDialog(false); // Close the dialog after success
-            setEditingSlide(null); // Reset the editing slide
+            const response = await fetch(
+                `http://localhost:5001/api/collections/${activeCollection._id}/slides`,
+                {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        title: `${slide.title} (Copy)`,
+                        content: slide.content,
+                    }),
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error('Failed to duplicate slide');
+            }
+
+            const updatedCollection = await response.json();
+
+            // Update the frontend state with the duplicated slide
+            await updateCollection(updatedCollection);
         } catch (error) {
-            console.error('Error updating collection:', error); // Handle any potential errors
+            console.error('Error duplicating slide:', error);
         }
     };
 
@@ -94,22 +149,31 @@ const Slides: React.FC<SlidesProps> = ({
         setShowDeleteDialog(true);
     };
 
-    const handleDeleteSlide = () => {
+    const handleDeleteSlide = async () => {
         if (!activeCollection || !slideToDelete) return;
 
-        const updatedSlides = activeCollection.slides.filter(
-            (slide) => slide._id !== slideToDelete._id
-        );
+        try {
+            // Make a DELETE request to the backend to remove the slide
+            const response = await fetch(
+                `http://localhost:5001/api/collections/${activeCollection._id}/slides/${slideToDelete._id}`,
+                {
+                    method: 'DELETE',
+                }
+            );
 
-        const updatedCollection = {
-            ...activeCollection,
-            slides: updatedSlides,
-        };
+            if (!response.ok) {
+                throw new Error('Failed to delete slide');
+            }
 
-        updateCollection(updatedCollection).then(() => {
+            const updatedCollection = await response.json();
+
+            // Update the frontend state with the updated collection
+            await updateCollection(updatedCollection);
             setShowDeleteDialog(false);
             setSlideToDelete(null);
-        });
+        } catch (error) {
+            console.error('Error deleting slide:', error);
+        }
     };
 
     return (
@@ -164,41 +228,51 @@ const Slides: React.FC<SlidesProps> = ({
                                 >
                                     {slide.title}
                                 </Text>
-                                <Group gap={0}>
-                                    <ActionIcon
-                                        variant="transparent"
-                                        aria-label="Edit"
-                                        onClick={(e) => {
-                                            e.stopPropagation(); // Prevent parent click event
-                                            openSlideDialog(slide);
-                                        }}
-                                    >
-                                        <IconEdit
-                                            style={{
-                                                width: '70%',
-                                                height: '70%',
-                                            }}
-                                            stroke={1}
-                                        />
-                                    </ActionIcon>
-                                    <ActionIcon
-                                        variant="transparent"
-                                        color="red"
-                                        aria-label="Delete"
-                                        onClick={(e) => {
-                                            e.stopPropagation(); // Prevent parent click event
-                                            openDeleteDialog(slide);
-                                        }}
-                                    >
-                                        <IconX
-                                            style={{
-                                                width: '70%',
-                                                height: '70%',
-                                            }}
-                                            stroke={1}
-                                        />
-                                    </ActionIcon>
-                                </Group>
+                                <Menu
+                                    withinPortal
+                                    position="bottom-end"
+                                    shadow="sm"
+                                >
+                                    <Menu.Target>
+                                        <ActionIcon>
+                                            <IconDotsVertical size={16} />
+                                        </ActionIcon>
+                                    </Menu.Target>
+
+                                    <Menu.Dropdown>
+                                        <Menu.Item
+                                            onClick={() =>
+                                                openSlideDialog(slide)
+                                            }
+                                        >
+                                            <Group>
+                                                <IconEdit size={16} />
+                                                <Text>Edit</Text>
+                                            </Group>
+                                        </Menu.Item>
+                                        <Menu.Item
+                                            onClick={() =>
+                                                duplicateSlide(slide)
+                                            }
+                                        >
+                                            <Group>
+                                                <IconEdit size={16} />
+                                                <Text>Duplicate</Text>
+                                            </Group>
+                                        </Menu.Item>
+                                        <Menu.Item
+                                            color="red"
+                                            onClick={() =>
+                                                openDeleteDialog(slide)
+                                            }
+                                        >
+                                            <Group>
+                                                <IconX size={16} />
+                                                <Text>Delete</Text>
+                                            </Group>
+                                        </Menu.Item>
+                                    </Menu.Dropdown>
+                                </Menu>
                             </Group>
                         ))
                     ) : (

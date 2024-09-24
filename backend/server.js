@@ -1,6 +1,8 @@
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
+const { v4: uuidv4 } = require('uuid'); // Import uuid for generating unique IDs
+
 const app = express();
 const port = 5001;
 
@@ -19,7 +21,7 @@ const collectionSchema = new mongoose.Schema({
     description: String,
     slides: [
         {
-            _id: String,
+            _id: String, // String to store slide IDs
             title: String,
             content: String,
         },
@@ -68,8 +70,6 @@ app.get('/collections/:id', async (req, res) => {
 });
 
 // Update an existing collection and its slides in the database
-const { v4: uuidv4 } = require('uuid'); // Import uuid for generating unique IDs
-
 app.put('/collections/:id', async (req, res) => {
     const { id } = req.params;
     let updatedCollection = req.body;
@@ -102,13 +102,106 @@ app.put('/collections/:id', async (req, res) => {
     }
 });
 
-// Delete a collection by ID from the database
-app.delete('/collections/:id', async (req, res) => {
+app.put('/api/collections/:collectionId/slides/:slideId', async (req, res) => {
+    const { collectionId, slideId } = req.params;
+    const { title, content } = req.body;
+
+    try {
+        // Find the collection
+        const collection = await Collection.findById(collectionId);
+        if (!collection) {
+            return res.status(404).json({ message: 'Collection not found' });
+        }
+
+        // Find the slide to update
+        const slide = collection.slides.id(slideId);
+        if (!slide) {
+            return res.status(404).json({ message: 'Slide not found' });
+        }
+
+        // Update the slide's title and content
+        slide.title = title;
+        slide.content = content;
+
+        // Save the collection with the updated slide
+        await collection.save();
+
+        res.status(200).json(collection);
+    } catch (error) {
+        console.error('Error updating slide:', error);
+        res.status(500).json({ message: 'Error updating slide', error });
+    }
+});
+
+// New Route: Create a new slide within a collection
+app.post('/api/collections/:collectionId/slides', async (req, res) => {
+    const { collectionId } = req.params;
+    const { title, content } = req.body;
+
+    try {
+        const collection = await Collection.findById(collectionId);
+        if (!collection) {
+            return res.status(404).json({ message: 'Collection not found' });
+        }
+
+        const newSlide = {
+            _id: uuidv4(), // Generate a unique ID using uuid
+            title,
+            content,
+        };
+
+        collection.slides.push(newSlide);
+        await collection.save();
+
+        res.status(201).json(collection);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Error creating slide', error });
+    }
+});
+
+// Delete a specific slide from a collection (this needs to come before the collection delete route)
+app.delete(
+    '/api/collections/:collectionId/slides/:slideId',
+    async (req, res) => {
+        const { collectionId, slideId } = req.params;
+
+        try {
+            // Find the collection by ID
+            const collection = await Collection.findById(collectionId);
+            if (!collection) {
+                return res
+                    .status(404)
+                    .json({ message: 'Collection not found' });
+            }
+
+            // Filter out the slide from the collection
+            collection.slides = collection.slides.filter(
+                (slide) => slide._id.toString() !== slideId
+            );
+
+            // Save the updated collection
+            await collection.save();
+
+            // Send back the updated collection
+            res.status(200).json(collection);
+        } catch (error) {
+            console.error('Error deleting slide:', error);
+            res.status(500).json({ message: 'Error deleting slide', error });
+        }
+    }
+);
+
+// Delete an entire collection
+app.delete('/api/collections/:id', async (req, res) => {
     const { id } = req.params;
 
     try {
-        await Collection.findByIdAndDelete(id); // Remove the collection from MongoDB
-        res.json({ message: 'Collection deleted successfully' });
+        const collection = await Collection.findByIdAndDelete(id);
+        if (!collection) {
+            return res.status(404).json({ message: 'Collection not found' });
+        }
+        res.status(200).json({ message: 'Collection deleted successfully' });
     } catch (error) {
         res.status(500).json({ message: 'Error deleting collection', error });
     }
