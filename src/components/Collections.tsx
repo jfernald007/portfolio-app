@@ -107,22 +107,30 @@ const Collections: React.FC<CollectionsProps> = ({
     };
 
     // Handle creating or updating a collection
-    const handleCollectionSubmit = async (collectionData: {
-        _id?: string;
-        title: string;
-        description: string;
-        slides: any[];
-    }) => {
+    const handleCollectionSubmit = async (
+        collectionData: Partial<Collection>
+    ) => {
         try {
-            if (collectionData._id) {
+            const currentCollection = collections.find(
+                (col) => col._id === collectionData._id
+            );
+
+            // Create updatedCollectionData and handle _id separately to avoid type issues
+            const updatedCollectionData: Partial<Collection> = {
+                ...collectionData,
+                slides: currentCollection
+                    ? currentCollection.slides
+                    : collectionData.slides || [],
+            };
+
+            if (updatedCollectionData._id) {
                 // If _id is present, update the collection (PUT request)
                 const response = await axios.put(
-                    `http://localhost:5001/collections/${collectionData._id}`,
-                    collectionData
+                    `http://localhost:5001/collections/${updatedCollectionData._id}`,
+                    updatedCollectionData
                 );
                 const updatedCollection = response.data;
 
-                // Update the existing collection in the state
                 setCollections((prevCollections) =>
                     prevCollections.map((col) =>
                         col._id === updatedCollection._id
@@ -131,17 +139,16 @@ const Collections: React.FC<CollectionsProps> = ({
                     )
                 );
             } else {
-                // If no _id, create a new collection (POST request)
+                // Handle case for creating a new collection (POST request)
                 const response = await axios.post(
                     'http://localhost:5001/collections',
-                    collectionData
+                    updatedCollectionData
                 );
                 setCollections((prevCollections) => [
                     ...prevCollections,
                     response.data,
                 ]);
             }
-
             setShowDialog(false); // Close the dialog after submit
             setEditingCollection(null); // Reset editing state
         } catch (error) {

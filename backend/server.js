@@ -72,23 +72,22 @@ app.get('/collections/:id', async (req, res) => {
 // Update an existing collection and its slides in the database
 app.put('/collections/:id', async (req, res) => {
     const { id } = req.params;
-    let updatedCollection = req.body;
-
-    // Ensure the slides array is defined and is an array, even if it's empty
-    updatedCollection.slides = Array.isArray(updatedCollection.slides)
-        ? updatedCollection.slides
-        : [];
-
-    // Ensure every slide has a unique _id before updating the collection in MongoDB
-    updatedCollection.slides = updatedCollection.slides.map((slide) => {
-        if (!slide._id) {
-            slide._id = uuidv4(); // Assign a unique ID if it doesn't exist
-        }
-        return slide;
-    });
+    const updatedCollection = req.body;
 
     try {
-        // Update the collection with new slides or changes to slides
+        // Fetch the existing collection from the database
+        const currentCollection = await Collection.findById(id);
+        if (!currentCollection) {
+            return res.status(404).json({ message: 'Collection not found' });
+        }
+
+        // Preserve the existing slides if the updated slides are not provided
+        updatedCollection.slides =
+            updatedCollection.slides.length > 0
+                ? updatedCollection.slides
+                : currentCollection.slides;
+
+        // Update the collection
         const collection = await Collection.findByIdAndUpdate(
             id,
             updatedCollection,
@@ -96,6 +95,7 @@ app.put('/collections/:id', async (req, res) => {
                 new: true, // Return the updated document
             }
         );
+
         res.json(collection);
     } catch (error) {
         res.status(500).json({ message: 'Error updating collection', error });
