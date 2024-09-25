@@ -21,11 +21,12 @@ const collectionSchema = new mongoose.Schema({
     description: String,
     slides: [
         {
-            _id: String, // String to store slide IDs
+            _id: String,
             title: String,
             content: String,
         },
     ],
+    position: Number, // New field to track the order of collections
 });
 
 // Create a model for Collections
@@ -34,7 +35,7 @@ const Collection = mongoose.model('Collection', collectionSchema);
 // Fetch all collections from the database
 app.get('/collections', async (req, res) => {
     try {
-        const collections = await Collection.find(); // Fetch from MongoDB
+        const collections = await Collection.find().sort({ position: 1 }); // Sort by position
         res.json(collections);
     } catch (error) {
         res.status(500).json({ message: 'Error fetching collections', error });
@@ -204,6 +205,25 @@ app.delete('/api/collections/:id', async (req, res) => {
         res.status(200).json({ message: 'Collection deleted successfully' });
     } catch (error) {
         res.status(500).json({ message: 'Error deleting collection', error });
+    }
+});
+
+// New Route: Update the order of collections
+app.post('/collections/order', async (req, res) => {
+    const newOrder = req.body;
+
+    try {
+        // Update each collection's position in the database
+        for (let i = 0; i < newOrder.length; i++) {
+            await Collection.findByIdAndUpdate(newOrder[i]._id, {
+                $set: { position: i }, // Assuming you add a 'position' field to your schema
+            });
+        }
+
+        res.status(200).json({ message: 'Order updated successfully' });
+    } catch (error) {
+        console.error('Error updating order:', error);
+        res.status(500).json({ message: 'Error updating order', error });
     }
 });
 

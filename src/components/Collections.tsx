@@ -61,7 +61,7 @@ const Collections: React.FC<CollectionsProps> = ({
     }, [activeCollection]); // Refetch collections whenever the active collection changes
 
     // Handle the drag and drop event
-    const onDragEnd = (result: any) => {
+    const onDragEnd = async (result: any) => {
         const { destination, source } = result;
 
         // If dropped outside the list, do nothing
@@ -76,8 +76,18 @@ const Collections: React.FC<CollectionsProps> = ({
 
         setCollections(reorderedCollections);
 
-        // Optionally, save the new order to the backend
-        // Example: axios.put('/api/collections/order', reorderedCollections);
+        // Send updated order to the backend
+        try {
+            await fetch('http://localhost:5001/collections/order', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(reorderedCollections),
+            });
+        } catch (error) {
+            console.error('Error saving new order:', error);
+        }
     };
 
     // Function to update a collection (e.g., adding, editing, or deleting slides)
