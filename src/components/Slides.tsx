@@ -51,6 +51,7 @@ const Slides: React.FC<SlidesProps> = ({
             let response;
 
             if (editingSlide) {
+                // If editing an existing slide, make a PUT request
                 response = await fetch(
                     `http://localhost:5001/api/collections/${activeCollection._id}/slides/${editingSlide._id}`,
                     {
@@ -63,6 +64,7 @@ const Slides: React.FC<SlidesProps> = ({
                     }
                 );
             } else {
+                // If creating a new slide, make a POST request
                 response = await fetch(
                     `http://localhost:5001/api/collections/${activeCollection._id}/slides`,
                     {
@@ -76,10 +78,51 @@ const Slides: React.FC<SlidesProps> = ({
                 );
             }
 
+            if (!response.ok) {
+                throw new Error(
+                    editingSlide
+                        ? 'Failed to update slide'
+                        : 'Failed to create slide'
+                );
+            }
+
             const updatedCollection = await response.json();
-            await updateCollection(updatedCollection);
-            setShowDialog(false);
-            setEditingSlide(null);
+
+            // Add the new slide to the top of the list or update the edited one in place
+            const reorderedSlides = editingSlide
+                ? activeCollection.slides.map((slide) =>
+                      slide._id === editingSlide._id
+                          ? { ...slide, ...slideData }
+                          : slide
+                  )
+                : [
+                      updatedCollection.slides[
+                          updatedCollection.slides.length - 1
+                      ],
+                      ...activeCollection.slides,
+                  ];
+
+            // Update collection in the backend with the reordered slides
+            await fetch(
+                `http://localhost:5001/collections/${activeCollection._id}`,
+                {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        ...activeCollection,
+                        slides: reorderedSlides,
+                    }),
+                }
+            );
+
+            // Update the collection in the frontend
+            await updateCollection({
+                ...activeCollection,
+                slides: reorderedSlides,
+            });
+
+            setShowDialog(false); // Close the dialog after submitting
+            setEditingSlide(null); // Reset editing state
         } catch (error) {
             console.error('Error saving slide:', error);
         }
