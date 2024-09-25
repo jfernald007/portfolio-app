@@ -162,6 +162,7 @@ const Collections: React.FC<CollectionsProps> = ({
                 );
                 const updatedCollection = response.data;
 
+                // Update the existing collection in the list without changing its position
                 setCollections((prevCollections) =>
                     prevCollections.map((col) =>
                         col._id === updatedCollection._id
@@ -175,11 +176,14 @@ const Collections: React.FC<CollectionsProps> = ({
                     'http://localhost:5001/collections',
                     updatedCollectionData
                 );
+
+                // Add the new collection to the top of the list
                 setCollections((prevCollections) => [
-                    ...prevCollections,
                     response.data,
+                    ...prevCollections,
                 ]);
             }
+
             setShowDialog(false); // Close the dialog after submit
             setEditingCollection(null); // Reset editing state
         } catch (error) {
