@@ -8,6 +8,7 @@ import {
 } from '@tabler/icons-react';
 import SlideForm from './SlideForm';
 import CustomDialog from './CustomDialog';
+import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 
 // Define types for the slide and collection
 interface Slide {
@@ -25,7 +26,7 @@ interface Collection {
 
 interface SlidesProps {
     activeCollection: Collection | null;
-    updateCollection: (updatedCollection: Collection) => Promise<void>; // Ensure it's async
+    updateCollection: (updatedCollection: Collection) => Promise<void>;
     onSelectSlide: (slide: Slide) => void;
     activeSlide: Slide | null;
 }
@@ -36,34 +37,25 @@ const Slides: React.FC<SlidesProps> = ({
     onSelectSlide,
     activeSlide,
 }) => {
-    const [editingSlide, setEditingSlide] = useState<Slide | null>(null); // Track the slide being edited
-    const [showDialog, setShowDialog] = useState(false); // Control for showing the form dialog
-    const [showDeleteDialog, setShowDeleteDialog] = useState(false); // Control for delete confirmation dialog
-    const [slideToDelete, setSlideToDelete] = useState<Slide | null>(null); // Track the slide to delete
-    const [dialogTitle, setDialogTitle] = useState(''); // Title for the dialog
+    const [editingSlide, setEditingSlide] = useState<Slide | null>(null);
+    const [showDialog, setShowDialog] = useState(false);
+    const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+    const [slideToDelete, setSlideToDelete] = useState<Slide | null>(null);
+    const [dialogTitle, setDialogTitle] = useState('');
 
     // Function to handle slide creation or update
     const handleSlideSubmit = async (slideData: Partial<Slide>) => {
         if (!activeCollection) return;
 
-        if (!slideData.title || !slideData.content) {
-            console.error('Title and content are required');
-            return;
-        }
-
         try {
             let response;
 
-            // Check if editing an existing slide
             if (editingSlide) {
-                // Send a PUT request to update the existing slide
                 response = await fetch(
                     `http://localhost:5001/api/collections/${activeCollection._id}/slides/${editingSlide._id}`,
                     {
                         method: 'PUT',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
+                        headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                             title: slideData.title,
                             content: slideData.content,
@@ -71,14 +63,11 @@ const Slides: React.FC<SlidesProps> = ({
                     }
                 );
             } else {
-                // If not editing, create a new slide (POST request)
                 response = await fetch(
                     `http://localhost:5001/api/collections/${activeCollection._id}/slides`,
                     {
                         method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
+                        headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                             title: slideData.title,
                             content: slideData.content,
@@ -87,20 +76,10 @@ const Slides: React.FC<SlidesProps> = ({
                 );
             }
 
-            if (!response.ok) {
-                throw new Error(
-                    editingSlide
-                        ? 'Failed to update slide'
-                        : 'Failed to create slide'
-                );
-            }
-
             const updatedCollection = await response.json();
-
-            // After successfully creating or updating the slide, update the state
             await updateCollection(updatedCollection);
             setShowDialog(false);
-            setEditingSlide(null); // Reset the editing state after save
+            setEditingSlide(null);
         } catch (error) {
             console.error('Error saving slide:', error);
         }
@@ -138,6 +117,36 @@ const Slides: React.FC<SlidesProps> = ({
         }
     };
 
+    // Handle drag and drop
+    const onDragEnd = async (result: any) => {
+        if (!result.destination || !activeCollection) return;
+
+        const reorderedSlides = Array.from(activeCollection.slides);
+        const [removed] = reorderedSlides.splice(result.source.index, 1);
+        reorderedSlides.splice(result.destination.index, 0, removed);
+
+        const updatedCollection = {
+            ...activeCollection,
+            slides: reorderedSlides,
+        };
+
+        try {
+            // Update the backend with the new order of slides
+            await fetch(
+                `http://localhost:5001/collections/${activeCollection._id}`,
+                {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(updatedCollection),
+                }
+            );
+
+            await updateCollection(updatedCollection);
+        } catch (error) {
+            console.error('Error updating slide order:', error);
+        }
+    };
+
     const openSlideDialog = (slide: Slide | null = null) => {
         setEditingSlide(slide);
         setDialogTitle(slide ? 'Edit Slide' : 'Create Slide');
@@ -153,7 +162,6 @@ const Slides: React.FC<SlidesProps> = ({
         if (!activeCollection || !slideToDelete) return;
 
         try {
-            // Make a DELETE request to the backend to remove the slide
             const response = await fetch(
                 `http://localhost:5001/api/collections/${activeCollection._id}/slides/${slideToDelete._id}`,
                 {
@@ -161,13 +169,7 @@ const Slides: React.FC<SlidesProps> = ({
                 }
             );
 
-            if (!response.ok) {
-                throw new Error('Failed to delete slide');
-            }
-
             const updatedCollection = await response.json();
-
-            // Update the frontend state with the updated collection
             await updateCollection(updatedCollection);
             setShowDeleteDialog(false);
             setSlideToDelete(null);
@@ -190,94 +192,147 @@ const Slides: React.FC<SlidesProps> = ({
                             onClick={() => openSlideDialog()}
                         >
                             <IconPlus
-                                style={{
-                                    width: '90%',
-                                    height: '90%',
-                                }}
+                                style={{ width: '90%', height: '90%' }}
                                 stroke={1}
                             />
                         </ActionIcon>
                     </Group>
 
-                    {/* List of slides */}
-                    {activeCollection.slides.length > 0 ? (
-                        activeCollection.slides.map((slide) => (
-                            <Group
-                                pr={5}
-                                w={300}
-                                gap={9}
-                                preventGrowOverflow
-                                key={slide._id}
-                                onClick={() => onSelectSlide(slide)}
-                                style={{
-                                    cursor: 'pointer',
-                                    borderRadius: '4px',
-                                    background:
-                                        slide === activeSlide
-                                            ? '#f7f7f7'
-                                            : 'transparent',
-                                }}
-                            >
-                                <Text
-                                    pt={4}
-                                    pl={10}
-                                    pb={4}
-                                    pr={5}
-                                    truncate
-                                    w={'calc(100% - 70px)'}
+                    {/* Drag and Drop Context */}
+                    <DragDropContext onDragEnd={onDragEnd}>
+                        <Droppable droppableId="slides">
+                            {(provided) => (
+                                <div
+                                    {...provided.droppableProps}
+                                    ref={provided.innerRef}
                                 >
-                                    {slide.title}
-                                </Text>
-                                <Menu
-                                    withinPortal
-                                    position="bottom-end"
-                                    shadow="sm"
-                                >
-                                    <Menu.Target>
-                                        <ActionIcon>
-                                            <IconDotsVertical size={16} />
-                                        </ActionIcon>
-                                    </Menu.Target>
+                                    {activeCollection.slides.map(
+                                        (slide, index) => (
+                                            <Draggable
+                                                key={slide._id}
+                                                draggableId={slide._id}
+                                                index={index}
+                                            >
+                                                {(provided) => (
+                                                    <Group
+                                                        pr={5}
+                                                        w={300}
+                                                        gap={9}
+                                                        preventGrowOverflow
+                                                        {...provided.draggableProps}
+                                                        {...provided.dragHandleProps}
+                                                        ref={provided.innerRef}
+                                                        onClick={() =>
+                                                            onSelectSlide(slide)
+                                                        }
+                                                        style={{
+                                                            cursor: 'pointer',
+                                                            borderRadius: '4px',
+                                                            background:
+                                                                slide ===
+                                                                activeSlide
+                                                                    ? '#f7f7f7'
+                                                                    : 'transparent',
+                                                            ...provided
+                                                                .draggableProps
+                                                                .style,
+                                                        }}
+                                                    >
+                                                        <Text
+                                                            pt={4}
+                                                            pl={10}
+                                                            pb={4}
+                                                            pr={5}
+                                                            truncate
+                                                            w={
+                                                                'calc(100% - 70px)'
+                                                            }
+                                                        >
+                                                            {slide.title}
+                                                        </Text>
+                                                        <Menu
+                                                            withinPortal
+                                                            position="bottom-end"
+                                                            shadow="sm"
+                                                        >
+                                                            <Menu.Target>
+                                                                <ActionIcon>
+                                                                    <IconDotsVertical
+                                                                        size={
+                                                                            16
+                                                                        }
+                                                                    />
+                                                                </ActionIcon>
+                                                            </Menu.Target>
 
-                                    <Menu.Dropdown>
-                                        <Menu.Item
-                                            onClick={() =>
-                                                openSlideDialog(slide)
-                                            }
-                                        >
-                                            <Group>
-                                                <IconEdit size={16} />
-                                                <Text>Edit</Text>
-                                            </Group>
-                                        </Menu.Item>
-                                        <Menu.Item
-                                            onClick={() =>
-                                                duplicateSlide(slide)
-                                            }
-                                        >
-                                            <Group>
-                                                <IconEdit size={16} />
-                                                <Text>Duplicate</Text>
-                                            </Group>
-                                        </Menu.Item>
-                                        <Menu.Item
-                                            color="red"
-                                            onClick={() =>
-                                                openDeleteDialog(slide)
-                                            }
-                                        >
-                                            <Group>
-                                                <IconX size={16} />
-                                                <Text>Delete</Text>
-                                            </Group>
-                                        </Menu.Item>
-                                    </Menu.Dropdown>
-                                </Menu>
-                            </Group>
-                        ))
-                    ) : (
-                        <Text>No slides added yet.</Text>
-                    )}
+                                                            <Menu.Dropdown>
+                                                                <Menu.Item
+                                                                    onClick={() =>
+                                                                        openSlideDialog(
+                                                                            slide
+                                                                        )
+                                                                    }
+                                                                >
+                                                                    <Group>
+                                                                        <IconEdit
+                                                                            size={
+                                                                                16
+                                                                            }
+                                                                        />
+                                                                        <Text>
+                                                                            Edit
+                                                                        </Text>
+                                                                    </Group>
+                                                                </Menu.Item>
+                                                                <Menu.Item
+                                                                    onClick={() =>
+                                                                        duplicateSlide(
+                                                                            slide
+                                                                        )
+                                                                    }
+                                                                >
+                                                                    <Group>
+                                                                        <IconEdit
+                                                                            size={
+                                                                                16
+                                                                            }
+                                                                        />
+                                                                        <Text>
+                                                                            Duplicate
+                                                                        </Text>
+                                                                    </Group>
+                                                                </Menu.Item>
+                                                                <Menu.Item
+                                                                    onClick={() =>
+                                                                        openDeleteDialog(
+                                                                            slide
+                                                                        )
+                                                                    }
+                                                                    color="red"
+                                                                >
+                                                                    <Group>
+                                                                        <IconX
+                                                                            size={
+                                                                                16
+                                                                            }
+                                                                        />
+                                                                        <Text>
+                                                                            Delete
+                                                                        </Text>
+                                                                    </Group>
+                                                                </Menu.Item>
+                                                            </Menu.Dropdown>
+                                                        </Menu>
+                                                    </Group>
+                                                )}
+                                            </Draggable>
+                                        )
+                                    )}
+                                    {provided.placeholder}
+                                </div>
+                            )}
+                        </Droppable>
+                    </DragDropContext>
 
                     <CustomDialog
                         opened={showDialog}
