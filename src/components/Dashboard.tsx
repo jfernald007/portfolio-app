@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Group, Box } from '@mantine/core';
+import { Group, Box, Stack } from '@mantine/core';
 import Collections from './Collections';
 import Slides from './Slides';
 import SlideViewer from './SlideViewer';
@@ -36,35 +36,36 @@ const Dashboard: React.FC = () => {
     };
 
     return (
-        <Box p={20}>
-            <Group gap="lg" align="flex-start" justify="flex-start">
-                {/* Column 1: Collections */}
-                <Box style={{ flex: 1 }}>
+        <Box w={'100vw'} h={'100vh'}>
+            <Group
+                h="100%"
+                gap="0"
+                align="flex-start"
+                justify="flex-start"
+                bg="yellow"
+            >
+                <Box p={20} w={'300px'} h={'100%'}>
                     <Collections
                         onSelectCollection={handleSelectCollection}
                         activeCollection={activeCollection}
                     />
                 </Box>
-
-                {/* Column 2: Slides */}
-                <Box style={{ flex: 2 }}>
-                    <Slides
-                        activeCollection={activeCollection}
-                        updateCollection={async (
-                            updatedCollection: Collection
-                        ) => {
-                            await setActiveCollection(updatedCollection);
-                        }} // Handle promise from updateCollection
-                        onSelectSlide={handleSelectSlide} // Handle slide selection
-                        activeSlide={selectedSlide} // Pass active slide to Slides component
-                    />
-                </Box>
-
-                {/* Column 3: Slide Viewer */}
-                <Box style={{ flex: 2 }}>
-                    {selectedSlide && ( // Only render SlideViewer if a slide is selected
-                        <SlideViewer selectedSlide={selectedSlide} />
-                    )}
+                <Box p={20} w={'calc(100% - 300px)'} h={'100%'} bg="green">
+                    <Stack>
+                        <Group justify="center" align="center" h={300}>
+                            <SlideViewer selectedSlide={selectedSlide} />
+                        </Group>
+                        <Slides
+                            activeCollection={activeCollection}
+                            updateCollection={async (
+                                updatedCollection: Collection
+                            ) => {
+                                await setActiveCollection(updatedCollection);
+                            }} // Handle promise from updateCollection
+                            onSelectSlide={handleSelectSlide} // Handle slide selection
+                            activeSlide={selectedSlide} // Pass active slide to Slides component
+                        />
+                    </Stack>
                 </Box>
             </Group>
         </Box>

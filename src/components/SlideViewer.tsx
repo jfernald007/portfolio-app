@@ -1,5 +1,5 @@
 import React from 'react';
-import { Stack, Text, Box } from '@mantine/core';
+import { Stack, Text } from '@mantine/core';
 
 // Define the type for the selected slide
 interface Slide {
@@ -19,12 +19,10 @@ const SlideViewer: React.FC<SlideViewerProps> = ({ selectedSlide }) => {
 
     return (
         <Stack>
-            <Box>
-                <Text fw={600} size="lg">
-                    {selectedSlide.title}
-                </Text>
-                <Text>{selectedSlide.content}</Text>
-            </Box>
+            <Text fw={600} size="lg">
+                {selectedSlide.title}
+            </Text>
+            <Text>{selectedSlide.content}</Text>
         </Stack>
     );
 };

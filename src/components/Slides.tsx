@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Stack, Text, Group, ActionIcon, Menu } from '@mantine/core';
+import { Stack, Text, Group, ActionIcon, Menu, Box } from '@mantine/core';
 import {
     IconPlus,
     IconEdit,
@@ -242,140 +242,139 @@ const Slides: React.FC<SlidesProps> = ({
                     </Group>
 
                     {/* Drag and Drop Context */}
-                    <DragDropContext onDragEnd={onDragEnd}>
-                        <Droppable droppableId="slides">
-                            {(provided) => (
-                                <div
-                                    {...provided.droppableProps}
-                                    ref={provided.innerRef}
-                                >
-                                    {activeCollection.slides.map(
-                                        (slide, index) => (
-                                            <Draggable
-                                                key={slide._id}
-                                                draggableId={slide._id}
-                                                index={index}
-                                            >
-                                                {(provided) => (
-                                                    <Group
-                                                        pr={5}
-                                                        w={300}
-                                                        gap={9}
-                                                        preventGrowOverflow
-                                                        {...provided.draggableProps}
-                                                        {...provided.dragHandleProps}
-                                                        ref={provided.innerRef}
-                                                        onClick={() =>
-                                                            onSelectSlide(slide)
-                                                        }
-                                                        style={{
-                                                            cursor: 'pointer',
-                                                            borderRadius: '4px',
-                                                            background:
+                    <Box w={'100%'} className="slideContainer">
+                        <DragDropContext onDragEnd={onDragEnd}>
+                            <Droppable droppableId="slides">
+                                {(provided) => (
+                                    <Group
+                                        {...provided.droppableProps}
+                                        ref={provided.innerRef}
+                                        style={{ flexWrap: 'nowrap' }}
+                                    >
+                                        {activeCollection.slides.map(
+                                            (slide, index) => (
+                                                <Draggable
+                                                    key={slide._id}
+                                                    draggableId={slide._id}
+                                                    index={index}
+                                                >
+                                                    {(provided) => (
+                                                        <Group
+                                                            {...provided.draggableProps}
+                                                            {...provided.dragHandleProps}
+                                                            w={300}
+                                                            gap={9}
+                                                            preventGrowOverflow
+                                                            ref={
+                                                                provided.innerRef
+                                                            }
+                                                            onClick={() =>
+                                                                onSelectSlide(
+                                                                    slide
+                                                                )
+                                                            }
+                                                            className={`slideCard ${
                                                                 slide ===
                                                                 activeSlide
-                                                                    ? '#f7f7f7'
-                                                                    : 'transparent',
-                                                            ...provided
-                                                                .draggableProps
-                                                                .style,
-                                                        }}
-                                                    >
-                                                        <Text
-                                                            pt={4}
-                                                            pl={10}
-                                                            pb={4}
-                                                            pr={5}
-                                                            truncate
-                                                            w={
-                                                                'calc(100% - 70px)'
-                                                            }
+                                                                    ? 'active'
+                                                                    : ''
+                                                            }`}
                                                         >
-                                                            {slide.title}
-                                                        </Text>
-                                                        <Menu
-                                                            withinPortal
-                                                            position="bottom-end"
-                                                            shadow="sm"
-                                                        >
-                                                            <Menu.Target>
-                                                                <ActionIcon>
-                                                                    <IconDotsVertical
-                                                                        size={
-                                                                            16
-                                                                        }
-                                                                    />
-                                                                </ActionIcon>
-                                                            </Menu.Target>
+                                                            <Text
+                                                                size={'13px'}
+                                                                px={10}
+                                                                py={3}
+                                                                truncate
+                                                                w={
+                                                                    'calc(100% - 38px)'
+                                                                }
+                                                            >
+                                                                {slide.title}
+                                                            </Text>
+                                                            <Menu
+                                                                withinPortal
+                                                                position="bottom-end"
+                                                                shadow="sm"
+                                                            >
+                                                                <Menu.Target>
+                                                                    <ActionIcon variant="transparent">
+                                                                        <IconDotsVertical
+                                                                            size={
+                                                                                16
+                                                                            }
+                                                                        />
+                                                                    </ActionIcon>
+                                                                </Menu.Target>
 
-                                                            <Menu.Dropdown>
-                                                                <Menu.Item
-                                                                    onClick={() =>
-                                                                        openSlideDialog(
-                                                                            slide
-                                                                        )
-                                                                    }
-                                                                >
-                                                                    <Group>
-                                                                        <IconEdit
-                                                                            size={
-                                                                                16
-                                                                            }
-                                                                        />
-                                                                        <Text>
-                                                                            Edit
-                                                                        </Text>
-                                                                    </Group>
-                                                                </Menu.Item>
-                                                                <Menu.Item
-                                                                    onClick={() =>
-                                                                        duplicateSlide(
-                                                                            slide
-                                                                        )
-                                                                    }
-                                                                >
-                                                                    <Group>
-                                                                        <IconEdit
-                                                                            size={
-                                                                                16
-                                                                            }
-                                                                        />
-                                                                        <Text>
-                                                                            Duplicate
-                                                                        </Text>
-                                                                    </Group>
-                                                                </Menu.Item>
-                                                                <Menu.Item
-                                                                    onClick={() =>
-                                                                        openDeleteDialog(
-                                                                            slide
-                                                                        )
-                                                                    }
-                                                                    color="red"
-                                                                >
-                                                                    <Group>
-                                                                        <IconX
-                                                                            size={
-                                                                                16
-                                                                            }
-                                                                        />
-                                                                        <Text>
-                                                                            Delete
-                                                                        </Text>
-                                                                    </Group>
-                                                                </Menu.Item>
-                                                            </Menu.Dropdown>
-                                                        </Menu>
-                                                    </Group>
-                                                )}
-                                            </Draggable>
-                                        )
-                                    )}
-                                    {provided.placeholder}
-                                </div>
-                            )}
-                        </Droppable>
-                    </DragDropContext>
+                                                                <Menu.Dropdown>
+                                                                    <Menu.Item
+                                                                        onClick={() =>
+                                                                            openSlideDialog(
+                                                                                slide
+                                                                            )
+                                                                        }
+                                                                    >
+                                                                        <Group>
+                                                                            <IconEdit
+                                                                                size={
+                                                                                    16
+                                                                                }
+                                                                            />
+                                                                            <Text>
+                                                                                Edit
+                                                                            </Text>
+                                                                        </Group>
+                                                                    </Menu.Item>
+                                                                    <Menu.Item
+                                                                        onClick={() =>
+                                                                            duplicateSlide(
+                                                                                slide
+                                                                            )
+                                                                        }
+                                                                    >
+                                                                        <Group>
+                                                                            <IconEdit
+                                                                                size={
+                                                                                    16
+                                                                                }
+                                                                            />
+                                                                            <Text>
+                                                                                Duplicate
+                                                                            </Text>
+                                                                        </Group>
+                                                                    </Menu.Item>
+                                                                    <Menu.Item
+                                                                        onClick={() =>
+                                                                            openDeleteDialog(
+                                                                                slide
+                                                                            )
+                                                                        }
+                                                                        color="red"
+                                                                    >
+                                                                        <Group>
+                                                                            <IconX
+                                                                                size={
+                                                                                    16
+                                                                                }
+                                                                            />
+                                                                            <Text>
+                                                                                Delete
+                                                                            </Text>
+                                                                        </Group>
+                                                                    </Menu.Item>
+                                                                </Menu.Dropdown>
+                                                            </Menu>
+                                                        </Group>
+                                                    )}
+                                                </Draggable>
+                                            )
+                                        )}
+                                        {provided.placeholder}
+                                    </Group>
+                                )}
+                            </Droppable>
+                        </DragDropContext>
+                    </Box>
 
                     <CustomDialog
                         opened={showDialog}

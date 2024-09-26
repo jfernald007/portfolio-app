@@ -286,12 +286,10 @@ const Collections: React.FC<CollectionsProps> = ({
                                             {...provided.draggableProps}
                                             {...provided.dragHandleProps}
                                             ref={provided.innerRef} // Ensure innerRef is passed here too
-                                            pr={5}
-                                            w={300}
                                             gap={9}
                                             preventGrowOverflow
                                             key={collection._id}
-                                            className={`collectionGroup ${
+                                            className={`collectionCard ${
                                                 collection._id ===
                                                 activeCollection?._id
                                                     ? 'active'
@@ -299,25 +297,16 @@ const Collections: React.FC<CollectionsProps> = ({
                                             }`}
                                         >
                                             <Text
-                                                pt={4}
-                                                pl={10}
-                                                pb={4}
-                                                pr={5}
+                                                size={'13px'}
+                                                px={10}
+                                                py={3}
                                                 truncate
-                                                w={'calc(100% - 70px)'}
+                                                w={'calc(100% - 38px)'}
                                                 onClick={() =>
                                                     onSelectCollection(
                                                         collection
                                                     )
                                                 }
-                                                style={{
-                                                    cursor: 'pointer',
-                                                    color:
-                                                        collection._id ===
-                                                        activeCollection?._id
-                                                            ? 'indigo'
-                                                            : '#000',
-                                                }}
                                             >
                                                 {collection.title}
                                             </Text>
@@ -327,7 +316,7 @@ const Collections: React.FC<CollectionsProps> = ({
                                                 shadow="sm"
                                             >
                                                 <Menu.Target>
-                                                    <ActionIcon>
+                                                    <ActionIcon variant="transparent">
                                                         <IconDotsVertical
                                                             size={16}
                                                         />
