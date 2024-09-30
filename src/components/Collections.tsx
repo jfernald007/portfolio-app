@@ -249,11 +249,12 @@ const Collections: React.FC<CollectionsProps> = ({
             <Droppable droppableId="collections-list">
                 {(provided) => (
                     <Stack
+                        w={'100%'}
                         {...provided.droppableProps}
                         ref={provided.innerRef} // Ensure the innerRef is passed correctly here
                         gap={5}
                     >
-                        <Group w={300} gap={7} preventGrowOverflow>
+                        <Group p={0} w={'100%'} gap={7} preventGrowOverflow>
                             <Text
                                 truncate
                                 fw={600}
@@ -294,7 +295,7 @@ const Collections: React.FC<CollectionsProps> = ({
                                                 activeCollection?._id
                                                     ? 'active'
                                                     : ''
-                                            }`}
+                                            } draggable`}
                                         >
                                             <Text
                                                 size={'13px'}

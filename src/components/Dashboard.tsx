@@ -37,22 +37,20 @@ const Dashboard: React.FC = () => {
 
     return (
         <Box w={'100vw'} h={'100vh'}>
-            <Group
-                h="100%"
-                gap="0"
-                align="flex-start"
-                justify="flex-start"
-                bg="yellow"
-            >
-                <Box p={20} w={'300px'} h={'100%'}>
+            <Group h="100%" gap="0" align="flex-start" justify="flex-start">
+                <Box p={20} className="dashLeft">
                     <Collections
                         onSelectCollection={handleSelectCollection}
                         activeCollection={activeCollection}
                     />
                 </Box>
-                <Box p={20} w={'calc(100% - 300px)'} h={'100%'} bg="green">
-                    <Stack>
-                        <Group justify="center" align="center" h={300}>
+                <Box px="10" className="dashRight">
+                    <Stack w={'100%'}>
+                        <Group
+                            className="slideViewerContainer"
+                            justify="center"
+                            align="center"
+                        >
                             <SlideViewer selectedSlide={selectedSlide} />
                         </Group>
                         <Slides

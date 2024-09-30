@@ -1,49 +1,139 @@
 @import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;500;700&display=swap');
 
 body {
-    color: var(--primary-color);
+    color: var(--text-color);
     font-family: 'Roboto', sans-serif;
+    font-size: var(--mantine-font-size-sm);
     font-weight: 300;
 
-    h1,
-    h2,
-    h3,
-    h4,
-    h5 {
-        font-family: 'Quicksand', sans-serif;
-        font-weight: 500;
+    h1 {
+        color: var(--text-color);
+        font-size: var(--mantine-font-size-lg);
+        font-weight: 700 !important;
+    }
+
+    h2 {
+        color: var(--text-color);
+        font-size: var(--mantine-font-size-lg);
+        font-weight: 700 !important;
+    }
+
+    h3 {
+        color: var(--text-color);
+        font-size: var(--mantine-font-size-md);
+        font-weight: 700 !important;
+    }
+}
+
+.dashLeft {
+    width: auto;
+    height: 100%;
+    display: flex;
+    background: var(--background-color1);
+    box-shadow: 5px 0 10px rgb(0 0 0 / 10%);
+    flex: 0 0 200px;
+    z-index: 1;
+}
+
+.dashRight {
+    width: 0;
+    height: 100%;
+    display: flex;
+    background: var(--background-color1);
+    flex: 1 1 0;
+    z-index: 0;
+
+    .slideViewerContainer {
+        width: 100%;
+        height: 0;
+        background: var(--background-color1);
+        box-shadow: 0 0 1px 1px rgb(0 0 0 / 10%);
+        display: flex;
+        flex: 1 1 0;
     }
 }
 
 .collectionCard,
 .slideCard {
+    background: var(--background-color1);
+    border: 1px solid transparent;
     border-radius: var(--border-radius);
-    border: 1px solid var(--border-color);
-    box-shadow: 0 2px 5px rgb(0 0 0 / 10%);
     cursor: pointer;
 
     p {
-        color: var(--primary-color);
+        color: var(--text-color);
+        font-size: 13px;
+    }
+
+    .mantine-UnstyledButton-root {
+        border: none;
     }
 
     &.active {
-        border-color: var(--primary-color);
+        background: var(--background-color2);
+
+        p,
+        .tabler-icon {
+            color: var(--primary-color);
+        }
+    }
+
+    &.draggable:hover {
+        border-color: var(--secondary-color);
     }
 }
 
 .slideContainer {
-    flex-wrap: nowrap;
-    overflow-y: hidden;
-    overflow-x: auto;
-    height: 100px;
-    background: blue;
+    padding: 0 50px 0 0;
+    width: 100%;
+    height: 120px;
+    position: relative;
 
-    .slideCard {
-        min-width: 140px;
-        height: 100px;
+    .slideList {
+        padding: 10px;
+        width: 100%;
+        flex-wrap: nowrap;
+        overflow-y: hidden;
+        overflow-x: auto;
+        height: 120px;
+
+        .slideCard {
+            min-width: 140px;
+            height: 100px;
+            border: 1px solid var(--border-color);
+        }
     }
+
+    .addSlideButton {
+        background: var(--background-color1);
+        width: 50px;
+        height: 120px;
+        position: absolute;
+        top: 0;
+        right: 0;
+
+        button {
+            border-radius: 50%;
+        }
+    }
+}
+
+.tabler-icon {
+    color: var(--text-color);
 }
 
 .mantine-Menu-itemLabel p {
     font-size: 13px;
+}
+
+.mantine-UnstyledButton-root {
+    border-color: var(--border-color);
+
+    &:hover {
+        border-color: var(--secondary-color);
+    }
+
+    &:active {
+        border-color: var(--primary-color);
+    }
 }

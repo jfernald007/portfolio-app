@@ -1,5 +1,13 @@
 import React, { useState } from 'react';
-import { Stack, Text, Group, ActionIcon, Menu, Box } from '@mantine/core';
+import {
+    Stack,
+    Text,
+    Group,
+    ActionIcon,
+    Menu,
+    Box,
+    Center,
+} from '@mantine/core';
 import {
     IconPlus,
     IconEdit,
@@ -222,31 +230,19 @@ const Slides: React.FC<SlidesProps> = ({
     };
 
     return (
-        <Stack gap={5}>
+        <Group gap={5} className="slideContainer">
             {activeCollection ? (
                 <>
-                    <Group w={300} gap={7} preventGrowOverflow>
-                        <Text truncate size="lg" w={'calc(100% - 35px)'}>
-                            Slides for {activeCollection.title}
-                        </Text>
-                        <ActionIcon
-                            variant="transparent"
-                            aria-label="Settings"
-                            onClick={() => openSlideDialog()}
-                        >
-                            <IconPlus
-                                style={{ width: '90%', height: '90%' }}
-                                stroke={1}
-                            />
-                        </ActionIcon>
-                    </Group>
-
                     {/* Drag and Drop Context */}
-                    <Box w={'100%'} className="slideContainer">
+                    <Box className="slideList">
                         <DragDropContext onDragEnd={onDragEnd}>
-                            <Droppable droppableId="slides">
+                            <Droppable
+                                droppableId="slides"
+                                direction="horizontal"
+                            >
                                 {(provided) => (
                                     <Group
+                                        gap={10}
                                         {...provided.droppableProps}
                                         ref={provided.innerRef}
                                         style={{ flexWrap: 'nowrap' }}
@@ -260,9 +256,9 @@ const Slides: React.FC<SlidesProps> = ({
                                                 >
                                                     {(provided) => (
                                                         <Group
+                                                            h={'100px'}
                                                             {...provided.draggableProps}
                                                             {...provided.dragHandleProps}
-                                                            w={300}
                                                             gap={9}
                                                             preventGrowOverflow
                                                             ref={
@@ -273,17 +269,9 @@ const Slides: React.FC<SlidesProps> = ({
                                                                     slide
                                                                 )
                                                             }
-                                                            className={`slideCard ${
-                                                                slide ===
-                                                                activeSlide
-                                                                    ? 'active'
-                                                                    : ''
-                                                            }`}
+                                                            className={`slideCard ${slide === activeSlide ? 'active' : ''} draggable`}
                                                         >
                                                             <Text
-                                                                size={'13px'}
-                                                                px={10}
-                                                                py={3}
                                                                 truncate
                                                                 w={
                                                                     'calc(100% - 38px)'
@@ -374,6 +362,23 @@ const Slides: React.FC<SlidesProps> = ({
                                 )}
                             </Droppable>
                         </DragDropContext>
+                        <Group
+                            align="center"
+                            justify="center"
+                            w={'50px'}
+                            className="addSlideButton"
+                        >
+                            <ActionIcon
+                                variant="transparent"
+                                aria-label="Settings"
+                                onClick={() => openSlideDialog()}
+                            >
+                                <IconPlus
+                                    style={{ width: '90%', height: '90%' }}
+                                    stroke={1}
+                                />
+                            </ActionIcon>
+                        </Group>
                     </Box>
 
                     <CustomDialog
@@ -415,7 +420,7 @@ const Slides: React.FC<SlidesProps> = ({
                     </Text>
                 </Group>
             )}
-        </Stack>
+        </Group>
     );
 };
 
