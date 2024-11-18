@@ -26,7 +26,6 @@ interface Collection {
 }
 
 interface CollectionsProps {
-    collections: Collection[];
     onSelectCollection: (collection: Collection | null) => void;
     activeCollection: Collection | null;
 }
