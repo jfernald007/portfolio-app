@@ -231,3 +231,45 @@ app.post('/collections/order', async (req, res) => {
 app.listen(port, () => {
     console.log(`Server is running on http://localhost:${port}`);
 });
+
+// Move Slide Endpoint
+router.post('/collections/move-slide', async (req, res) => {
+    try {
+        const { slideId, sourceCollectionId, targetCollectionId } = req.body;
+
+        // Find the source and target collections
+        const sourceCollection = await Collection.findById(sourceCollectionId);
+        const targetCollection = await Collection.findById(targetCollectionId);
+
+        if (!sourceCollection || !targetCollection) {
+            return res.status(404).json({ message: 'Collection not found' });
+        }
+
+        // Find the slide in the source collection
+        const slideIndex = sourceCollection.slides.findIndex(
+            (slide) => slide._id.toString() === slideId
+        );
+        if (slideIndex === -1) {
+            return res
+                .status(404)
+                .json({ message: 'Slide not found in source collection' });
+        }
+
+        // Remove the slide from the source collection
+        const [slide] = sourceCollection.slides.splice(slideIndex, 1);
+
+        // Add the slide to the target collection
+        targetCollection.slides.unshift(slide);
+
+        // Save both collections
+        await sourceCollection.save();
+        await targetCollection.save();
+
+        res.status(200).json({ message: 'Slide moved successfully' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+module.exports = router;
